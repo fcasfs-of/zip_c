@@ -16,7 +16,6 @@
     let currentTrackTags = null;
     let fallbackText = "Desconhecido";
 
-    // Inicializa o player com o arquivo de áudio carregado
     window.initPlayer = function(file, tags, unknownFallback) {
         audio.src = URL.createObjectURL(file);
         isTrackLoaded = true;
@@ -29,19 +28,17 @@
         if(tags.base64Cover && tags.base64Cover.length > 30) {
             pThumb.src = tags.base64Cover;
         } else {
-            pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='w3.org' viewBox='0 0 24 24' fill='%23888'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
+            pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%23888'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
         }
         playAudio();
     };
 
-    // Função global chamada pelo app.js ao alternar idiomas
     window.updatePlayerLanguage = function(langStrings) {
         if (!isTrackLoaded) {
             pTitle.innerText = langStrings.playerEmptyTitle;
             pArtist.innerText = langStrings.playerEmptyArtist;
         } else {
             fallbackText = langStrings.unknown;
-            // Se o artista atual inserido for o rótulo antigo de desconhecido, atualiza-o
             if (!currentTrackTags.artist) {
                 pArtist.innerText = fallbackText;
             }
@@ -54,7 +51,7 @@
     });
 
     function playAudio() {
-        audio.play();
+        audio.play().catch(e => console.log("Aguardando interação do usuário para reproduzir."));
         svgPlay.classList.add("field-hidden");
         svgPause.classList.remove("field-hidden");
     }
