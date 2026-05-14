@@ -46,7 +46,6 @@ const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
 const btnTheme = document.getElementById("btn-theme");
 
-// Inicialização e gerenciamento do motor de temas
 function initTheme() {
     document.body.classList.remove("light-theme", "dark-theme");
     document.body.classList.add(`${currentTheme}-theme`);
@@ -122,10 +121,10 @@ if (dropZone && fileInput) {
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.style.borderColor = "var(--border)";
-        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files);
     });
     fileInput.addEventListener("change", (e) => {
-        if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
+        if (e.target.files && e.target.files.length) handleFile(e.target.files);
     });
 }
 
@@ -345,8 +344,10 @@ function displayMainTags(tags) {
             img.classList.remove("field-hidden");
             def.classList.add("field-hidden");
         } else {
+            // Garante o reset visual injetando o novo ícone minimalista de áudio no painel superior
             img.src = "";
             img.classList.add("field-hidden");
+            def.innerHTML = `<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>`;
             def.classList.remove("field-hidden");
         }
     }
