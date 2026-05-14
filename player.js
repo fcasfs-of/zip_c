@@ -6,6 +6,7 @@
     const btnRewind = document.getElementById("btn-rewind");
     const btnForward = document.getElementById("btn-forward");
     
+    // Controles Deslizantes Customizados (Divs)
     const seekSlider = document.getElementById("seek-slider");
     const seekFill = document.getElementById("seek-fill");
     const seekThumb = document.getElementById("seek-thumb");
@@ -27,6 +28,7 @@
     let isDraggingSeek = false;
     let isDraggingVolume = false;
 
+    // Recupera e aplica as configurações persistidas de áudio
     function loadSavedSettings() {
         if (!audio) return;
         const savedVolume = localStorage.getItem("audioMeta_volume");
@@ -43,6 +45,7 @@
         }
     }
 
+    // Inicialização da Faixa carregada através do app.js
     window.initPlayer = function(file, tags, unknownFallback) {
         if (!file || !audio) return;
         
@@ -55,6 +58,7 @@
         if (pTitle) pTitle.innerText = tags.title || currentFileName;
         if (pArtist) pArtist.innerText = tags.artist || fallbackText;
         
+        // Sincroniza a exibição da capa extraída diretamente na miniatura do player inferior
         if (pThumb) {
             if (tags.base64Cover && tags.base64Cover.length > 50) {
                 pThumb.src = tags.base64Cover;
@@ -65,6 +69,7 @@
         playAudio();
     };
 
+    // Callback dinâmico chamado pelo app.js ao alternar idiomas
     window.updatePlayerLanguage = function(langStrings) {
         if (!pTitle || !pArtist) return;
         if (!isTrackLoaded) {
@@ -80,6 +85,7 @@
         }
     };
 
+    // Controles Básicos de Hardware
     if (btnPlay) {
         btnPlay.addEventListener("click", () => {
             if (!audio || !audio.src) return;
@@ -101,6 +107,7 @@
         if (svgPause) svgPause.classList.add("field-hidden");
     }
 
+    // Botões de Avanço e Retrocesso Temporais (±10 segundos)
     if (btnRewind) {
         btnRewind.addEventListener("click", () => {
             if (!audio || !audio.src) return;
@@ -115,6 +122,7 @@
         });
     }
 
+    // Atualização de Progresso NATIVO -> SLIDERS CUSTOMIZADOS
     if (audio) {
         audio.addEventListener("timeupdate", () => {
             if (!audio.duration || isNaN(audio.duration) || isDraggingSeek) return;
@@ -140,6 +148,7 @@
         if (volumeThumb) volumeThumb.style.left = pct + "%";
     }
 
+    // Gerenciamento de Cliques / Movimentos para a Seekbar Customizada
     if (seekSlider) {
         seekSlider.addEventListener("mousedown", (e) => {
             if (!audio || !audio.src || !audio.duration) return;
@@ -148,6 +157,7 @@
         });
     }
 
+    // Gerenciamento de Cliques / Movimentos para o Controle de Volume
     if (volumeSlider) {
         volumeSlider.addEventListener("mousedown", (e) => {
             if (!audio) return;
@@ -156,6 +166,7 @@
         });
     }
 
+    // Captura global de mouse para arrastos fora do elemento bounding box
     window.addEventListener("mousemove", (e) => {
         if (isDraggingSeek) processSeekEvent(e);
         if (isDraggingVolume) processVolumeEvent(e);
@@ -194,13 +205,13 @@
         }
     }
 
+    // Gerenciador de Silenciamento (Mute)
     if (btnMute) {
         btnMute.addEventListener("click", () => {
             if (!audio) return;
             audio.muted = !audio.muted;
             localStorage.setItem("audioMeta_mute", audio.muted ? "true" : "false");
             
-            // Reajusta a opacidade do botão dependendo do tema ativo implicitamente
             const isLightTheme = document.body.classList.contains("light-theme");
             btnMute.style.opacity = audio.muted ? "0.4" : (isLightTheme ? "0.8" : "1");
         });
