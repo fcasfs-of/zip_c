@@ -11,7 +11,6 @@ const langData = {
         lyricsTitle: "Letras da Música",
         techTitle: "Propriedades Técnicas do Arquivo",
         lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio",
-        // Mapeamento de tags conhecidas para exibição amigável
         TIT2: "Título", TPE1: "Artista", TALB: "Álbum", TYER: "Ano", TCON: "Gênero", TRCK: "Faixa",
         COMM: "Comentários", TCOM: "Compositor", TEXT: "Letrista", TPE2: "Artista do Álbum",
         TPUB: "Gravadora/Editora", TENC: "Codificado por", TSSE: "Configurações do Encoder"
@@ -76,7 +75,6 @@ function updateLanguage(lang) {
     if (lblFrequency) lblFrequency.innerText = langData[lang].lblFrequency;
     if (lblChannels) lblChannels.innerText = langData[lang].lblChannels;
 
-    // Atualiza os textos fixos ou dinâmicos exibidos na tela principal baseado nas tags extraídas
     if (Object.keys(dynamicDiscoveredTags).length > 0) {
         displayMainTags(dynamicDiscoveredTags);
     }
@@ -97,16 +95,15 @@ if (dropZone && fileInput) {
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.style.borderColor = "var(--border)";
-        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files);
+        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener("change", (e) => {
-        if (e.target.files && e.target.files.length) handleFile(e.target.files);
+        if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
     });
 }
 
-function handleFile(fileSet) {
-    if (!fileSet || !fileSet[0]) return;
-    const file = fileSet[0];
+function handleFile(file) {
+    if (!file) return;
     
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -219,26 +216,60 @@ function parseCompleteMP3(buffer) {
 
 function readTextFrame(view, offset, size) {
     if (size <= 1) return "";
-    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1), view.getUint8(offset));
+    const encoding = view.getUint8(offset);
+    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1);
+    return decodeString(u8, encoding);
 }
 
 function readCommentFrame(view, offset, size) {
     if (size <= 5) return "";
-    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5), view.getUint8(offset));
+    const encoding = view.getUint8(offset);
+    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
+    return decodeString(u8, encoding);
 }
 
 function readLyricsFrame(view, offset, size) {
     if (size <= 5) return "";
-    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5), view.getUint8(offset));
+    const encoding = view.getUint8(offset);
+    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
+    return decodeString(u8, encoding);
 }
 
+// Mecanismo inteligente anti-caracteres corrompidos (Anti-Bug Chinês)
 function decodeString(uint8Array, encoding) {
     try {
         let cleanBytes = uint8Array.filter(b => b !== 0);
         if (cleanBytes.length === 0) return "";
-        if (encoding === 1 || encoding === 2) return new TextDecoder('utf-16').decode(cleanBytes);
-        return new TextDecoder('utf-8').decode(cleanBytes);
-    } catch(e) { return ""; }
+        
+        let decoded = "";
+        
+        // Força decodificação baseada nas flags oficiais da tag ou fallback inteligente se quebrar
+        if (encoding === 1 || encoding === 2) {
+            // Se alegar UTF-16 mas não tiver tamanho par ou faltar o cabeçalho BOM, tenta ler como UTF-8/ISO
+            if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) {
+                decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
+            } else if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF) {
+                decoded = new TextDecoder('utf-16be').decode(cleanBytes.subarray(2));
+            } else {
+                decoded = new TextDecoder('utf-16').decode(cleanBytes);
+            }
+        } else if (encoding === 3) {
+            decoded = new TextDecoder('utf-8').decode(cleanBytes);
+        } else {
+            decoded = new TextDecoder('windows-1252').decode(cleanBytes); // Padrão estável para ISO-8859-1 ocidental
+        }
+
+        // Validação preventiva: Se o texto convertido contiver uma sequência incomum de caracteres CJK (Chineses)
+        // resultantes de pareamento de bytes ocidentais corrompidos, força a decodificação direta para texto legível.
+        const cjkRegex = /[\u4e00-\u9fa5]/;
+        if (cjkRegex.test(decoded) && encoding !== 3) {
+            decoded = new TextDecoder('windows-1252').decode(cleanBytes);
+        }
+        
+        return decoded.trim();
+    } catch(e) { 
+        return ""; 
+    }
 }
 
 function readPictureFrame(view, offset, size, version) {
@@ -331,7 +362,6 @@ function renderExtendedList() {
     keys.forEach(key => {
         const valueText = raw[key];
         if (valueText && valueText.trim() !== "") {
-            // Se houver uma tradução para o ID da Tag (ex: TIT2 -> Título), usa ela. Se não, exibe o ID bruto.
             const localizedKey = langData[currentLang][key] || key;
             const item = document.createElement("div");
             item.className = "extended-item";
