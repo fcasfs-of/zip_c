@@ -1,3 +1,6 @@
+/* ==========================================================================
+   DECLARAÇÃO DE VARIÁVEIS E ESCOPO DE TEMAS
+   ========================================================================== */
 :root {
     --bg-main: #020617;
     --bg-card: #0b1329;
@@ -38,6 +41,9 @@ body.light-theme {
     --scrollbar-thumb-hover: #94a3b8;
 }
 
+/* ==========================================================================
+   RESET E CUSTOMIZAÇÃO GLOBAL DA SCROLLBAR
+   ========================================================================== */
 * {
     margin: 0;
     padding: 0;
@@ -51,7 +57,6 @@ html {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* Scrollbar Personalizada Premium (WebKit) */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -151,33 +156,94 @@ body.light-theme header {
     gap: 1.5rem;
 }
 
-.drop-zone {
+/* ==========================================================================
+   SEÇÃO DE DUPLO INPUT DE ENTRADA (MÓDULO DE SELEÇÃO)
+   ========================================================================== */
+.input-grid-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.drop-zone, .url-zone {
     background: var(--bg-card);
     border: 2px dashed var(--border);
     border-radius: var(--radius);
-    padding: 4rem 2rem;
+    padding: 3rem 1.5rem;
     text-align: center;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.drop-zone:hover {
+.url-zone {
+    cursor: default; /* URL zone possui um input de texto digitável */
+}
+
+.drop-zone:hover, .url-zone:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 25px rgba(59, 130, 246, 0.08);
 }
 
-.drop-zone svg {
+.drop-zone svg, .url-zone svg {
     color: var(--accent);
-    margin-bottom: 1.25rem;
 }
 
-.drop-zone p {
-    font-size: 0.95rem;
-    font-weight: 500;
+.drop-zone p, .url-zone p {
+    font-size: 0.9rem;
+    font-weight: 600;
     color: var(--text-muted);
 }
 
+.url-input-container {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.url-input-container input {
+    flex-grow: 1;
+    background: rgba(100, 116, 139, 0.06);
+    border: 1px solid var(--border);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.url-input-container input:focus {
+    border-color: var(--accent);
+}
+
+.url-input-container button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.url-input-container button:hover {
+    background: var(--accent-hover);
+}
+
+/* ==========================================================================
+   VISUALIZAÇÃO DE PAINÉIS DE METADADOS E CARDS
+   ========================================================================== */
 .meta-container {
     display: flex;
     flex-direction: column;
@@ -329,7 +395,9 @@ body.light-theme header {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* Estilização Integrada do Rodapé */
+/* ==========================================================================
+   RODAPÉ E FORMATADOS AUXILIARES
+   ========================================================================== */
 .app-footer {
     width: 100%;
     text-align: center;
@@ -366,15 +434,22 @@ body.light-theme header {
     display: none !important;
 }
 
+/* ==========================================================================
+   DISPOSITIVOS MÓVEIS (RESPONSIVIDADE)
+   ========================================================================== */
 @media (max-width: 768px) {
     header {
         padding: 1rem 1.5rem;
     }
+    .input-grid-wrapper {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
     .container {
         margin: 1.5rem auto;
     }
-    .drop-zone {
-        padding: 3rem 1.5rem;
+    .drop-zone, .url-zone {
+        padding: 2.5rem 1.25rem;
     }
     .meta-card {
         flex-direction: column;
