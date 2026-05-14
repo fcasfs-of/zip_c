@@ -6,6 +6,7 @@
     const btnRewind = document.getElementById("btn-rewind");
     const btnForward = document.getElementById("btn-forward");
     
+    // Sliders customizados baseados em divs
     const seekSlider = document.getElementById("seek-slider");
     const seekFill = document.getElementById("seek-fill");
     const seekThumb = document.getElementById("seek-thumb");
@@ -27,9 +28,10 @@
     let isDraggingSeek = false;
     let isDraggingVolume = false;
 
-    // String SVG minimalista e profissional estruturada em Outline para o Fallback sem capa
+    // String SVG estruturada em Outline para quando o arquivo não possuir capa
     const audioFallbackSvg = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18V5l12-2v13'></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>";
 
+    // Recupera e aplica as configurações salvas de volume e mudo
     function loadSavedSettings() {
         if (!audio) return;
         const savedVolume = localStorage.getItem("audioMeta_volume");
@@ -46,9 +48,15 @@
         }
     }
 
+    // Inicialização da faixa enviada pelo app.js
     window.initPlayer = function(file, tags, unknownFallback) {
         if (!file || !audio) return;
         
+        // RemoveObjectURL anterior se houver para evitar vazamento de memória
+        if (audio.src && audio.src.startsWith("blob:")) {
+            URL.revokeObjectURL(audio.src);
+        }
+
         audio.src = URL.createObjectURL(file);
         isTrackLoaded = true;
         currentTrackTags = tags;
@@ -62,21 +70,19 @@
             if (tags.base64Cover && tags.base64Cover.length > 50) {
                 pThumb.src = tags.base64Cover;
             } else {
-                // Injeta o novo ícone moderno de áudio como fallback direto na miniatura do player
                 pThumb.src = audioFallbackSvg;
             }
         }
         playAudio();
     };
 
+    // Callback de tradução chamado em tempo real pelo app.js
     window.updatePlayerLanguage = function(langStrings) {
         if (!pTitle || !pArtist) return;
         if (!isTrackLoaded) {
             pTitle.innerText = langStrings.playerEmptyTitle;
             pArtist.innerText = langStrings.playerEmptyArtist;
-            if (pThumb) {
-                pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><circle cx='12' cy='12' r='3'></circle></svg>";
-            }
+            if (pThumb) pThumb.src = audioFallbackSvg;
         } else {
             fallbackText = langStrings.unknown;
             if (!currentTrackTags || !currentTrackTags.title) pTitle.innerText = currentFileName;
@@ -93,6 +99,7 @@
 
     function playAudio() {
         if (!audio) return;
+        // Captura e silencia a Promise para evitar erros de restrição de autoplay do navegador
         audio.play().catch(function() {});
         if (svgPlay) svgPlay.classList.add("field-hidden");
         if (svgPause) svgPause.classList.remove("field-hidden");
@@ -105,6 +112,7 @@
         if (svgPause) svgPause.classList.add("field-hidden");
     }
 
+    // Avanço e Retrocesso Temporais de 10 segundos
     if (btnRewind) {
         btnRewind.addEventListener("click", () => {
             if (!audio || !audio.src) return;
@@ -114,11 +122,12 @@
 
     if (btnForward) {
         btnForward.addEventListener("click", () => {
-            if (!audio || !audio.src || !audio.duration) return;
+            if (!audio || !audio.src || !audio.duration || isNaN(audio.duration)) return;
             audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
         });
     }
 
+    // Sincronização do Áudio com as Barras de Progresso Customizadas
     if (audio) {
         audio.addEventListener("timeupdate", () => {
             if (!audio.duration || isNaN(audio.duration) || isDraggingSeek) return;
@@ -144,9 +153,10 @@
         if (volumeThumb) volumeThumb.style.left = pct + "%";
     }
 
+    // Ativação dos gatilhos de arrasto
     if (seekSlider) {
         seekSlider.addEventListener("mousedown", (e) => {
-            if (!audio || !audio.src || !audio.duration) return;
+            if (!audio || !audio.src || !audio.duration || isNaN(audio.duration)) return;
             isDraggingSeek = true;
             processSeekEvent(e);
         });
@@ -160,6 +170,7 @@
         });
     }
 
+    // Rastreamento global de movimento do mouse (evita que o arrasto trave ao sair da div)
     window.addEventListener("mousemove", (e) => {
         if (isDraggingSeek) processSeekEvent(e);
         if (isDraggingVolume) processVolumeEvent(e);
@@ -171,10 +182,10 @@
     });
 
     function processSeekEvent(e) {
-        if (!audio || !audio.duration || !seekSlider) return;
+        if (!audio || !audio.duration || isNaN(audio.duration) || !seekSlider) return;
         const rect = seekSlider.getBoundingClientRect();
         let posX = (e.clientX - rect.left) / rect.width;
-        posX = Math.max(0, Math.min(1, posX));
+        posX = Math.max(0, Math.min(1, posX)); // Limita o valor entre 0% e 100%
         
         updateSeekUI(posX * 100);
         audio.currentTime = posX * audio.duration;
