@@ -1,8 +1,4 @@
-/* ==========================================================================
-   DECLARAÇÃO DE VARIÁVEIS E ESCOPO DE TEMAS
-   ========================================================================== */
 :root {
-    /* Padrão Inicial (Fallback Dark) */
     --bg-main: #020617;
     --bg-card: #0b1329;
     --accent: #3b82f6;
@@ -42,9 +38,6 @@ body.light-theme {
     --scrollbar-thumb-hover: #94a3b8;
 }
 
-/* ==========================================================================
-   RESET E CUSTOMIZAÇÃO GLOBAL DA SCROLLBAR
-   ========================================================================== */
 * {
     margin: 0;
     padding: 0;
@@ -53,16 +46,15 @@ body.light-theme {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Suporte para Firefox (Propriedades padrão) */
 html {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* Suporte para Chrome, Edge, Safari e Opera (WebKit) */
+/* Scrollbar Personalizada Premium (WebKit) */
 ::-webkit-scrollbar {
-    width: 10px;  /* Largura da barra vertical */
-    height: 10px; /* Altura da barra horizontal */
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -72,7 +64,7 @@ html {
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 9999px;
-    border: 2px solid var(--scrollbar-track); /* Cria um espaçamento sutil nas bordas */
+    border: 2px solid var(--scrollbar-track);
     transition: background-color 0.2s ease;
 }
 
@@ -80,14 +72,11 @@ html {
     background: var(--scrollbar-thumb-hover);
 }
 
-/* ==========================================================================
-   ESTRUTURA GERAL DA INTERFACE
-   ========================================================================== */
 body {
     background-color: var(--bg-main);
     color: var(--text-main);
     min-height: 100vh;
-    padding-bottom: 140px; /* Margem de segurança para o player inferior */
+    padding-bottom: 160px;
     overflow-x: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -123,7 +112,6 @@ body.light-theme header {
     text-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
 }
 
-/* Seletores superiores (Idiomas) */
 .lang-selector {
     display: flex;
     background: rgba(100, 116, 139, 0.08);
@@ -154,7 +142,6 @@ body.light-theme header {
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
 
-/* Container principal de cartões */
 .container {
     max-width: 900px;
     margin: 2.5rem auto;
@@ -164,9 +151,6 @@ body.light-theme header {
     gap: 1.5rem;
 }
 
-/* ==========================================================================
-   ZONA DE COMPONENTES: UPLOAD E METADADOS
-   ========================================================================== */
 .drop-zone {
     background: var(--bg-card);
     border: 2px dashed var(--border);
@@ -282,9 +266,6 @@ body.light-theme header {
     transition: color 0.3s ease;
 }
 
-/* ==========================================================================
-   PAINÉIS ADICIONAIS: LETRAS E HARDWARE
-   ========================================================================== */
 .extended-meta-card {
     background: var(--bg-card);
     border-radius: var(--radius);
@@ -333,7 +314,6 @@ body.light-theme header {
     color: var(--text-main);
 }
 
-/* Compartimento Dedicado à Exibição de Letras */
 .lyrics-content {
     background: rgba(100, 116, 139, 0.03);
     padding: 1.5rem;
@@ -349,14 +329,43 @@ body.light-theme header {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* Modificadores de Visibilidade */
+/* Estilização Integrada do Rodapé */
+.app-footer {
+    width: 100%;
+    text-align: center;
+    padding: 2rem 1rem;
+    border-top: 1px solid var(--border);
+    background: rgba(100, 116, 139, 0.02);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.app-footer strong {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.footer-link {
+    margin-top: 0.35rem;
+}
+
+.footer-link a {
+    color: var(--accent);
+    text-decoration: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.footer-link a:hover {
+    color: var(--accent-hover);
+}
+
 .field-hidden {
     display: none !important;
 }
 
-/* ==========================================================================
-   RESPONSIVIDADE (DISPOSITIVOS COMPACTOS)
-   ========================================================================== */
 @media (max-width: 768px) {
     header {
         padding: 1rem 1.5rem;
