@@ -26,6 +26,7 @@ const langData = {
 };
 
 let currentLang = localStorage.getItem("audioMeta_lang") || "pt";
+let currentTheme = localStorage.getItem("audioMeta_theme") || "dark";
 let dynamicDiscoveredTags = {};
 
 const txtDrop = document.getElementById("txt-drop");
@@ -43,6 +44,41 @@ const lblFrequency = document.getElementById("lbl-frequency");
 const lblChannels = document.getElementById("lbl-channels");
 const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
+const btnTheme = document.getElementById("btn-theme");
+
+// Sistema de Gerenciamento do Tema Claro/Escuro
+function initTheme() {
+    document.body.classList.remove("light-theme", "dark-theme");
+    document.body.classList.add(`${currentTheme}-theme`);
+    updateThemeButtonIcon();
+}
+
+function toggleTheme() {
+    currentTheme = currentTheme === "dark" ? "light" : "dark";
+    localStorage.setItem("audioMeta_theme", currentTheme);
+    document.body.classList.remove("light-theme", "dark-theme");
+    document.body.classList.add(`${currentTheme}-theme`);
+    updateThemeButtonIcon();
+}
+
+function updateThemeButtonIcon() {
+    if (!btnTheme) return;
+    const svgSun = btnTheme.querySelector("#svg-sun");
+    const svgMoon = btnTheme.querySelector("#svg-moon");
+    if (svgSun && svgMoon) {
+        if (currentTheme === "dark") {
+            svgSun.classList.remove("field-hidden");
+            svgMoon.classList.add("field-hidden");
+        } else {
+            svgSun.classList.add("field-hidden");
+            svgMoon.classList.remove("field-hidden");
+        }
+    }
+}
+
+if (btnTheme) {
+    btnTheme.addEventListener("click", toggleTheme);
+}
 
 function updateLanguage(lang) {
     currentLang = lang;
@@ -84,15 +120,16 @@ if (dropZone && fileInput) {
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.style.borderColor = "var(--border)";
-        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files);
     });
     fileInput.addEventListener("change", (e) => {
-        if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
+        if (e.target.files && e.target.files.length) handleFile(e.target.files);
     });
 }
 
-function handleFile(file) {
-    if (!file) return;
+function handleFile(fileSet) {
+    if (!fileSet || !fileSet) return;
+    const file = fileSet;
     
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -169,7 +206,7 @@ function parseCompleteMP3(buffer) {
     try {
         let syncOffset = 0;
         const maxSearch = Math.min(buffer.byteLength - 4, 64000);
-        const sampleRatesTable = [44100, 48000, 32000, 0];
+        const sampleRatesTable =;
         
         while (syncOffset < maxSearch) {
             if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
@@ -212,12 +249,10 @@ function readLyricsFrame(view, offset, size) {
     return decodeString(u8, encoding);
 }
 
-// Mecanismo Ultra-Estável de Purificação de Caracteres Ocidentais
 function decodeString(uint8Array, encoding) {
     try {
-        // Remove bytes estritamente nulos intermediários causados por desalinhamento UTF-16 incorreto
         let cleanBytes = uint8Array.filter((b, idx) => {
-            if (encoding === 0 && b === 0) return false; // Remove nulos fantasmas do ISO-8859-1
+            if (encoding === 0 && b === 0) return false;
             return true;
         });
 
@@ -225,9 +260,9 @@ function decodeString(uint8Array, encoding) {
         let decoded = "";
         
         if (encoding === 1 || encoding === 2) {
-            if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) {
+            if (cleanBytes.length >= 2 && cleanBytes === 0xFF && cleanBytes === 0xFE) {
                 decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
-            } else if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF) {
+            } else if (cleanBytes.length >= 2 && cleanBytes === 0xFE && cleanBytes === 0xFF) {
                 decoded = new TextDecoder('utf-16be').decode(cleanBytes.subarray(2));
             } else {
                 decoded = new TextDecoder('utf-16').decode(cleanBytes);
@@ -238,19 +273,14 @@ function decodeString(uint8Array, encoding) {
             decoded = new TextDecoder('windows-1252').decode(cleanBytes);
         }
 
-        // Filtro de Segurança Anti-Chinês (Corrige se o interpretador do navegador misturar pares latinos)
         const cjkRegex = /[\u4e00-\u9fa5\u3040-\u30ff]/;
         if (cjkRegex.test(decoded)) {
-            // Remove bytes de controle não imprimíveis e tenta ler usando a tabela ASCII/Windows estendida pura
             const strippedBytes = cleanBytes.filter(b => b >= 32 || b === 10 || b === 13);
             decoded = new TextDecoder('windows-1252').decode(strippedBytes);
         }
 
-        // Remove quebras de linha fantasmas e caracteres invisíveis de controle de string no início/fim
         return decoded.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
-    } catch(e) { 
-        return ""; 
-    }
+    } catch(e) { return ""; }
 }
 
 function readPictureFrame(view, offset, size, version) {
@@ -325,4 +355,5 @@ function displayMainTags(tags) {
     }
 }
 
+initTheme();
 updateLanguage(currentLang);
