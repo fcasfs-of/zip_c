@@ -208,6 +208,7 @@ function parseCompleteMP3(buffer) {
         const maxSearch = Math.min(buffer.byteLength - 4, 64000);
         // Tabela populada corretamente para evitar erros de sintaxe de array vazio
         const sampleRatesTable = [44100, 48000, 32000, 0];
+        const bitratesTable = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
         
         while (syncOffset < maxSearch) {
             if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
@@ -216,10 +217,11 @@ function parseCompleteMP3(buffer) {
 
                 const sampleRate = sampleRatesTable[(byte2 & 0x0C) >> 2];
                 const channels = ((byte3 & 0xC0) >> 6) === 3 ? "Mono" : "Stereo";
+                const bitrate = bitratesTable[(byte2 & 0xF0) >> 4];
 
                 tags.technical.frequency = sampleRate ? `${sampleRate} Hz` : "-";
                 tags.technical.channels = channels;
-                tags.technical.bitrate = "MPEG Audio Layer III";
+                tags.technical.bitrate = bitrate ? `${bitrate} kbps` : "MPEG Audio";
                 break;
             }
             syncOffset++;
