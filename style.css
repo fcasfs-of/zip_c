@@ -1,24 +1,50 @@
+/* ==========================================================================
+   DECLARAÇÃO DE VARIÁVEIS E ESCOPO DE TEMAS
+   ========================================================================== */
 :root {
+    /* Padrão Inicial (Fallback Dark) */
     --bg-main: #020617;
     --bg-card: #0b1329;
     --accent: #3b82f6;
+    --accent-hover: #1d4ed8;
     --text-main: #f8fafc;
     --text-muted: #64748b;
     --border: #1e293b;
-    --bg-input: #0f172a;
     --radius: 12px;
+    --scrollbar-track: #020617;
+    --scrollbar-thumb: #1e293b;
+    --scrollbar-thumb-hover: #334155;
+}
+
+body.dark-theme {
+    --bg-main: #020617;
+    --bg-card: #0b1329;
+    --accent: #3b82f6;
+    --accent-hover: #1d4ed8;
+    --text-main: #f8fafc;
+    --text-muted: #64748b;
+    --border: #1e293b;
+    --scrollbar-track: #020617;
+    --scrollbar-thumb: #1e293b;
+    --scrollbar-thumb-hover: #334155;
 }
 
 body.light-theme {
     --bg-main: #f8fafc;
     --bg-card: #ffffff;
-    --accent: #2563eb;
+    --accent: #3b82f6;
+    --accent-hover: #1d4ed8;
     --text-main: #0f172a;
     --text-muted: #64748b;
     --border: #e2e8f0;
-    --bg-input: #f1f5f9;
+    --scrollbar-track: #f8fafc;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-thumb-hover: #94a3b8;
 }
 
+/* ==========================================================================
+   RESET E CUSTOMIZAÇÃO GLOBAL DA SCROLLBAR
+   ========================================================================== */
 * {
     margin: 0;
     padding: 0;
@@ -27,13 +53,43 @@ body.light-theme {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Suporte para Firefox (Propriedades padrão) */
+html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Suporte para Chrome, Edge, Safari e Opera (WebKit) */
+::-webkit-scrollbar {
+    width: 10px;  /* Largura da barra vertical */
+    height: 10px; /* Altura da barra horizontal */
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+    border: 2px solid var(--scrollbar-track); /* Cria um espaçamento sutil nas bordas */
+    transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* ==========================================================================
+   ESTRUTURA GERAL DA INTERFACE
+   ========================================================================== */
 body {
     background-color: var(--bg-main);
     color: var(--text-main);
     min-height: 100vh;
-    padding-bottom: 140px;
+    padding-bottom: 140px; /* Margem de segurança para o player inferior */
     overflow-x: hidden;
-    transition: background-color 0.3s, color 0.3s;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 header {
@@ -41,46 +97,18 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 2rem;
-    background: rgba(9, 13, 22, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(2, 6, 23, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 900;
+    transition: border-color 0.3s ease;
 }
 
 body.light-theme header {
-    background: rgba(255, 255, 255, 0.7);
-}
-
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.theme-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-main);
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.theme-btn:hover {
-    background: var(--bg-input);
-}
-
-.theme-btn svg {
-    width: 20px;
-    height: 20px;
+    background: rgba(248, 250, 252, 0.1);
 }
 
 .logo {
@@ -92,11 +120,13 @@ body.light-theme header {
 
 .logo span {
     color: var(--accent);
+    text-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
 }
 
+/* Seletores superiores (Idiomas) */
 .lang-selector {
     display: flex;
-    background: var(--bg-input);
+    background: rgba(100, 116, 139, 0.08);
     padding: 0.25rem;
     border-radius: 8px;
     border: 1px solid var(--border);
@@ -111,14 +141,20 @@ body.light-theme header {
     font-size: 0.8rem;
     font-weight: 700;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+}
+
+.lang-selector button:hover {
+    color: var(--text-main);
 }
 
 .lang-selector button.active {
     background: var(--accent);
-    color: #ffffff;
+    color: var(--text-main);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
 
+/* Container principal de cartões */
 .container {
     max-width: 900px;
     margin: 2.5rem auto;
@@ -128,6 +164,9 @@ body.light-theme header {
     gap: 1.5rem;
 }
 
+/* ==========================================================================
+   ZONA DE COMPONENTES: UPLOAD E METADADOS
+   ========================================================================== */
 .drop-zone {
     background: var(--bg-card);
     border: 2px dashed var(--border);
@@ -135,11 +174,13 @@ body.light-theme header {
     padding: 4rem 2rem;
     text-align: center;
     cursor: pointer;
-    transition: all 0.25s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .drop-zone:hover {
     border-color: var(--accent);
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.08);
 }
 
 .drop-zone svg {
@@ -167,6 +208,8 @@ body.light-theme header {
     display: flex;
     gap: 2.5rem;
     align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .cover-wrapper {
@@ -175,8 +218,9 @@ body.light-theme header {
     flex-shrink: 0;
     border-radius: 10px;
     overflow: hidden;
-    background: var(--bg-input);
+    background: rgba(100, 116, 139, 0.05);
     border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -188,6 +232,10 @@ body.light-theme header {
     object-fit: cover;
 }
 
+.no-cover {
+    color: var(--text-muted);
+}
+
 .meta-info {
     flex-grow: 1;
     min-width: 0;
@@ -197,6 +245,8 @@ body.light-theme header {
     font-size: 1.2rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
 }
 
 .info-grid {
@@ -211,6 +261,7 @@ body.light-theme header {
     gap: 0.25rem;
     border-bottom: 1px solid var(--border);
     padding-bottom: 0.5rem;
+    transition: border-color 0.3s ease;
 }
 
 .info-item .label {
@@ -218,24 +269,36 @@ body.light-theme header {
     color: var(--text-muted);
     text-transform: uppercase;
     font-weight: 700;
+    letter-spacing: 0.05em;
 }
 
 .info-item .val {
     font-size: 0.95rem;
     font-weight: 600;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.3s ease;
 }
 
+/* ==========================================================================
+   PAINÉIS ADICIONAIS: LETRAS E HARDWARE
+   ========================================================================== */
 .extended-meta-card {
     background: var(--bg-card);
     border-radius: var(--radius);
     padding: 2rem;
     border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .extended-meta-card h3 {
     font-size: 1.05rem;
     font-weight: 700;
     margin-bottom: 1.25rem;
+    color: var(--text-main);
     border-left: 3px solid var(--accent);
     padding-left: 0.75rem;
 }
@@ -247,13 +310,14 @@ body.light-theme header {
 }
 
 .extended-item {
-    background: var(--bg-input);
+    background: rgba(100, 116, 139, 0.03);
     padding: 1rem;
     border-radius: 8px;
     border: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .extended-key {
@@ -266,10 +330,12 @@ body.light-theme header {
 .extended-val {
     font-size: 0.9rem;
     font-weight: 600;
+    color: var(--text-main);
 }
 
+/* Compartimento Dedicado à Exibição de Letras */
 .lyrics-content {
-    background: var(--bg-input);
+    background: rgba(100, 116, 139, 0.03);
     padding: 1.5rem;
     border-radius: 8px;
     font-size: 1rem;
@@ -280,14 +346,41 @@ body.light-theme header {
     overflow-y: auto;
     color: var(--text-main);
     border: 1px solid var(--border);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
+/* Modificadores de Visibilidade */
 .field-hidden {
     display: none !important;
 }
 
+/* ==========================================================================
+   RESPONSIVIDADE (DISPOSITIVOS COMPACTOS)
+   ========================================================================== */
 @media (max-width: 768px) {
-    header { padding: 1rem 1.5rem; flex-direction: column; gap: 1rem; }
-    .meta-card { flex-direction: column; gap: 1.5rem; text-align: center; }
-    .info-grid, .extended-list { grid-template-columns: 1fr; }
+    header {
+        padding: 1rem 1.5rem;
+    }
+    .container {
+        margin: 1.5rem auto;
+    }
+    .drop-zone {
+        padding: 3rem 1.5rem;
+    }
+    .meta-card {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+    }
+    .cover-wrapper {
+        width: 150px;
+        height: 150px;
+    }
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .extended-list {
+        grid-template-columns: 1fr;
+    }
 }
