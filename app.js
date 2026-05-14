@@ -99,8 +99,9 @@ fileInput.addEventListener("change", (e) => {
     if(e.target.files.length) handleFile(e.target.files);
 });
 
-function handleFile(file) {
-    if (file.type !== "audio/mpeg" && !file.name.endsWith(".mp3")) return;
+function handleFile(files) {
+    const file = files[0];
+    if (!file) return;
     
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -120,7 +121,6 @@ function parseCompleteMP3(buffer) {
     const view = new DataView(buffer);
     const tags = { _raw: {}, lyrics: "", technical: {} };
     
-    // 1. Extração de Metadados ID3v2
     if (view.getUint8(0) === 0x49 && view.getUint8(1) === 0x44 && view.getUint8(2) === 0x33) {
         const version = view.getUint8(3);
         let offset = 10;
@@ -163,7 +163,7 @@ function parseCompleteMP3(buffer) {
         }
     }
 
-    // 2. Extração de Metadados Técnicos Próprios do Frame de Áudio MPEG
+    // TABELAS DE HARDWARE CORRIGIDAS (Sintaxe Correta)
     let syncOffset = 0;
     while (syncOffset < buffer.byteLength - 4) {
         if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
@@ -177,9 +177,8 @@ function parseCompleteMP3(buffer) {
             const channelMode = (byte3 & 0xC0) >> 6;
             const channels = channelMode === 3 ? "Mono" : "Stereo";
 
-            const bitrateIndex = (byte2 & 0xF0) >> 4;
             const bitrates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
-            const bitrate = bitrates[bitrateIndex];
+            const bitrate = bitrates[(byte2 & 0xF0) >> 4];
 
             tags.technical = {
                 bitrate: bitrate ? `${bitrate} kbps` : "VBR / Desconhecido",
@@ -213,7 +212,6 @@ function readCommentFrame(view, offset, size) {
 
 function readLyricsFrame(view, offset, size) {
     if (size <= 5) return "";
-    // Salta cabeçalho de encoding (1 byte), ISO-language (3 bytes) e delimitador de conteúdo (1 byte)
     return decodeString(new Uint8Array(view.buffer, offset + 5, size - 5), view.getUint8(offset));
 }
 
@@ -258,12 +256,10 @@ function displayMainTags(tags) {
     document.getElementById("val-genre").innerText = tags.genre || fallback;
     document.getElementById("val-track").innerText = tags.track || fallback;
 
-    // Atualiza Informações Técnicas estruturadas
     document.getElementById("val-bitrate").innerText = tags.technical.bitrate || fallback;
     document.getElementById("val-frequency").innerText = tags.technical.frequency || fallback;
     document.getElementById("val-channels").innerText = tags.technical.channels || fallback;
 
-    // Elemento de Letras
     const lyricsCard = document.getElementById("lyrics-card");
     const lyricsText = document.getElementById("lyrics-text");
     if(tags.lyrics) {
