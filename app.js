@@ -1,22 +1,28 @@
+// Dicionário de Idiomas Expandido
 const langData = {
     pt: {
         drop: "Arraste seu MP3 aqui ou clique para buscar",
         metaTitle: "Metadados Extraídos",
         title: "Título", artist: "Artista", album: "Álbum",
         year: "Ano", genre: "Gênero", track: "Faixa",
-        unknown: "Desconhecido"
+        unknown: "Desconhecido",
+        playerEmptyTitle: "Nenhuma música",
+        playerEmptyArtist: "Aguardando arquivo"
     },
     en: {
         drop: "Drag your MP3 here or click to browse",
         metaTitle: "Extracted Metadata",
         title: "Title", artist: "Artist", album: "Album",
         year: "Year", genre: "Genre", track: "Track",
-        unknown: "Unknown"
+        unknown: "Unknown",
+        playerEmptyTitle: "No track selected",
+        playerEmptyArtist: "Waiting for file"
     }
 };
 
 let currentLang = "pt";
 
+// Elementos de Tradução da Interface Superior
 const txtDrop = document.getElementById("txt-drop");
 const txtMetaTitle = document.getElementById("txt-meta-title");
 const lblTitle = document.getElementById("lbl-title");
@@ -39,6 +45,11 @@ function updateLanguage(lang) {
     lblYear.innerText = langData[lang].year;
     lblGenre.innerText = langData[lang].genre;
     lblTrack.innerText = langData[lang].track;
+
+    // Atualiza os placeholders do player se não houver música tocando
+    if (typeof window.updatePlayerLanguage === "function") {
+        window.updatePlayerLanguage(langData[lang]);
+    }
 }
 
 document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
@@ -54,10 +65,10 @@ dropZone.addEventListener("dragleave", () => dropZone.style.borderColor = "var(-
 dropZone.addEventListener("drop", (e) => {
     e.preventDefault();
     dropZone.style.borderColor = "var(--border)";
-    if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files);
 });
 fileInput.addEventListener("change", (e) => {
-    if(e.target.files.length) handleFile(e.target.files[0]);
+    if(e.target.files.length) handleFile(e.target.files);
 });
 
 function handleFile(file) {
@@ -68,7 +79,10 @@ function handleFile(file) {
         const buffer = e.target.result;
         const tags = parseID3(buffer);
         displayTags(tags);
-        window.initPlayer(file, tags);
+        
+        // Passa o fallback de texto desconhecido baseado no idioma ativo para o player
+        const fallbackUnknown = langData[currentLang].unknown;
+        window.initPlayer(file, tags, fallbackUnknown);
     };
     reader.readAsArrayBuffer(file);
 }
@@ -151,3 +165,6 @@ function displayTags(tags) {
         def.classList.remove("field-hidden");
     }
 }
+
+// Executa a tradução inicial por padrão
+updateLanguage("pt");
