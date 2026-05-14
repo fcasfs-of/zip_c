@@ -10,7 +10,11 @@ const langData = {
         extendedTitle: "Todos os Rótulos Encontrados (Tags ID3)",
         lyricsTitle: "Letras da Música",
         techTitle: "Propriedades Técnicas do Arquivo",
-        lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio"
+        lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio",
+        // Mapeamento de tags conhecidas para exibição amigável
+        TIT2: "Título", TPE1: "Artista", TALB: "Álbum", TYER: "Ano", TCON: "Gênero", TRCK: "Faixa",
+        COMM: "Comentários", TCOM: "Compositor", TEXT: "Letrista", TPE2: "Artista do Álbum",
+        TPUB: "Gravadora/Editora", TENC: "Codificado por", TSSE: "Configurações do Encoder"
     },
     en: {
         drop: "Drag your MP3 here or click to browse",
@@ -23,7 +27,10 @@ const langData = {
         extendedTitle: "All Discovered Labels (ID3 Tags)",
         lyricsTitle: "Lyrics",
         techTitle: "Technical Properties",
-        lblBitrate: "Bitrate", lblFrequency: "Sample Rate", lblChannels: "Audio Channels"
+        lblBitrate: "Bitrate", lblFrequency: "Sample Rate", lblChannels: "Audio Channels",
+        TIT2: "Title", TPE1: "Artist", TALB: "Album", TYER: "Year", TCON: "Genre", TRCK: "Track",
+        COMM: "Comments", TCOM: "Composer", TEXT: "Lyricist", TPE2: "Album Artist",
+        TPUB: "Publisher", TENC: "Encoded By", TSSE: "Encoder Settings"
     }
 };
 
@@ -69,6 +76,11 @@ function updateLanguage(lang) {
     if (lblFrequency) lblFrequency.innerText = langData[lang].lblFrequency;
     if (lblChannels) lblChannels.innerText = langData[lang].lblChannels;
 
+    // Atualiza os textos fixos ou dinâmicos exibidos na tela principal baseado nas tags extraídas
+    if (Object.keys(dynamicDiscoveredTags).length > 0) {
+        displayMainTags(dynamicDiscoveredTags);
+    }
+
     if (typeof window.updatePlayerLanguage === "function") {
         window.updatePlayerLanguage(langData[lang]);
     }
@@ -85,15 +97,16 @@ if (dropZone && fileInput) {
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.style.borderColor = "var(--border)";
-        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files);
     });
     fileInput.addEventListener("change", (e) => {
-        if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
+        if (e.target.files && e.target.files.length) handleFile(e.target.files);
     });
 }
 
-function handleFile(file) {
-    if (!file) return;
+function handleFile(fileSet) {
+    if (!fileSet || !fileSet[0]) return;
+    const file = fileSet[0];
     
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -121,7 +134,6 @@ function parseCompleteMP3(buffer) {
         const version = view.getUint8(3);
         let offset = 10;
         
-        // Tamanho total do cabeçalho ID3v2 codificado em Synchsafe de 28 bits
         const totalSize = ((view.getUint8(6) & 0x7F) << 21) | 
                           ((view.getUint8(7) & 0x7F) << 14) | 
                           ((view.getUint8(8) & 0x7F) << 7)  | 
@@ -167,15 +179,12 @@ function parseCompleteMP3(buffer) {
                 } else if (frameId === "USLT" || frameId === "ULT") {
                     tags.lyrics = readLyricsFrame(view, dataOffset, frameSize);
                 }
-            } catch(err) {
-                // Silencia frames corrompidos individuais para não travar a leitura
-            }
+            } catch(err) {}
             
             offset += headerSize + frameSize;
         }
     }
 
-    // Leitura técnica estável dos frames de áudio MPEG
     try {
         let syncOffset = 0;
         const maxSearch = Math.min(buffer.byteLength - 4, 64000);
@@ -210,37 +219,23 @@ function parseCompleteMP3(buffer) {
 
 function readTextFrame(view, offset, size) {
     if (size <= 1) return "";
-    const encoding = view.getUint8(offset);
-    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1);
-    return decodeString(u8, encoding);
+    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1), view.getUint8(offset));
 }
 
 function readCommentFrame(view, offset, size) {
     if (size <= 5) return "";
-    const encoding = view.getUint8(offset);
-    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
-    return decodeString(u8, encoding);
+    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5), view.getUint8(offset));
 }
 
 function readLyricsFrame(view, offset, size) {
     if (size <= 5) return "";
-    const encoding = view.getUint8(offset);
-    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
-    return decodeString(u8, encoding);
+    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5), view.getUint8(offset));
 }
 
 function decodeString(uint8Array, encoding) {
     try {
         let cleanBytes = uint8Array.filter(b => b !== 0);
         if (cleanBytes.length === 0) return "";
-        
-        // Remove marcações de ordem de byte (BOM) UTF-16 comuns se presentes
-        if ((encoding === 1 || encoding === 2) && cleanBytes.length >= 2) {
-            if ((cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) || (cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF)) {
-                cleanBytes = cleanBytes.subarray(2);
-            }
-        }
-        
         if (encoding === 1 || encoding === 2) return new TextDecoder('utf-16').decode(cleanBytes);
         return new TextDecoder('utf-8').decode(cleanBytes);
     } catch(e) { return ""; }
@@ -261,23 +256,18 @@ function readPictureFrame(view, offset, size, version) {
                 current++;
             }
             if (mimeChars.length) mimeType = mimeChars.join("");
-            current += 2; // Pula o delimitador nulo e o tipo de figura (1 byte)
+            current += 2;
         }
 
-        // Pula a descrição textual da imagem se ela existir
-        while (view.getUint8(current) !== 0 && current < end) {
-            current++;
-        }
-        current++; // Pula o byte nulo finalizador da descrição
+        while (view.getUint8(current) !== 0 && current < end) current++;
+        current++;
 
         if (current >= end) return "";
         
         const imgBytes = new Uint8Array(view.buffer, view.byteOffset + current, end - current);
         let binary = '';
         const len = imgBytes.byteLength;
-        for (let i = 0; i < len; i++) {
-            binary += String.fromCharCode(imgBytes[i]);
-        }
+        for (let i = 0; i < len; i++) binary += String.fromCharCode(imgBytes[i]);
         return `data:${mimeType};base64,${btoa(binary)}`;
     } catch(e) { return ""; }
 }
@@ -341,9 +331,11 @@ function renderExtendedList() {
     keys.forEach(key => {
         const valueText = raw[key];
         if (valueText && valueText.trim() !== "") {
+            // Se houver uma tradução para o ID da Tag (ex: TIT2 -> Título), usa ela. Se não, exibe o ID bruto.
+            const localizedKey = langData[currentLang][key] || key;
             const item = document.createElement("div");
             item.className = "extended-item";
-            item.innerHTML = `<span class="extended-key">${key}</span><span class="extended-val">${valueText}</span>`;
+            item.innerHTML = `<span class="extended-key">${localizedKey}</span><span class="extended-val">${valueText}</span>`;
             container.appendChild(item);
         }
     });
