@@ -25,9 +25,11 @@ const langData = {
     }
 };
 
-let currentLang = localStorage.getItem("audioMeta_lang") || "pt";
+// Escopos globais compartilhados com downloader.js e player.js
+window.currentLang = localStorage.getItem("audioMeta_lang") || "pt";
+window.dynamicDiscoveredTags = {};
+
 let currentTheme = localStorage.getItem("audioMeta_theme") || "dark";
-let dynamicDiscoveredTags = {};
 
 const txtDrop = document.getElementById("txt-drop");
 const txtMetaTitle = document.getElementById("txt-meta-title");
@@ -45,6 +47,7 @@ const lblChannels = document.getElementById("lbl-channels");
 const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
 const btnTheme = document.getElementById("btn-theme");
+const txtBtnDownload = document.getElementById("txt-btn-download");
 
 function initTheme() {
     document.body.classList.remove("light-theme", "dark-theme");
@@ -80,7 +83,7 @@ if (btnTheme) {
 }
 
 function updateLanguage(lang) {
-    currentLang = lang;
+    window.currentLang = lang;
     localStorage.setItem("audioMeta_lang", lang);
     
     const btnPt = document.getElementById("btn-pt");
@@ -101,9 +104,10 @@ function updateLanguage(lang) {
     if (lblBitrate) lblBitrate.innerText = langData[lang].lblBitrate;
     if (lblFrequency) lblFrequency.innerText = langData[lang].lblFrequency;
     if (lblChannels) lblChannels.innerText = langData[lang].lblChannels;
+    if (txtBtnDownload) txtBtnDownload.innerText = lang === "pt" ? "Baixar Dados" : "Download Data";
 
-    if (Object.keys(dynamicDiscoveredTags).length > 0) {
-        displayMainTags(dynamicDiscoveredTags);
+    if (Object.keys(window.dynamicDiscoveredTags).length > 0) {
+        displayMainTags(window.dynamicDiscoveredTags);
     }
 
     if (typeof window.updatePlayerLanguage === "function") {
@@ -134,12 +138,12 @@ function handleFile(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const buffer = e.target.result;
-        dynamicDiscoveredTags = parseCompleteMP3(buffer);
-        displayMainTags(dynamicDiscoveredTags);
+        window.dynamicDiscoveredTags = parseCompleteMP3(buffer);
+        displayMainTags(window.dynamicDiscoveredTags);
         
-        const fallbackUnknown = langData[currentLang].unknown;
+        const fallbackUnknown = langData[window.currentLang].unknown;
         if (typeof window.initPlayer === "function") {
-            window.initPlayer(file, dynamicDiscoveredTags, fallbackUnknown);
+            window.initPlayer(file, window.dynamicDiscoveredTags, fallbackUnknown);
         }
     };
     reader.readAsArrayBuffer(file);
@@ -206,7 +210,6 @@ function parseCompleteMP3(buffer) {
     try {
         let syncOffset = 0;
         const maxSearch = Math.min(buffer.byteLength - 4, 64000);
-        // Tabela populada corretamente para evitar erros de sintaxe de array vazio
         const sampleRatesTable = [44100, 48000, 32000, 0];
         const bitratesTable = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
         
@@ -317,7 +320,10 @@ function displayMainTags(tags) {
     const metaContainer = document.getElementById("meta-container");
     if (metaContainer) metaContainer.classList.remove("field-hidden");
     
-    const fallback = langData[currentLang].unknown;
+    const btnDownloadMeta = document.getElementById("btn-download-meta");
+    if (btnDownloadMeta) btnDownloadMeta.classList.remove("field-hidden");
+    
+    const fallback = langData[window.currentLang].unknown;
     
     if (document.getElementById("val-title")) document.getElementById("val-title").innerText = tags.title || fallback;
     if (document.getElementById("val-artist")) document.getElementById("val-artist").innerText = tags.artist || fallback;
@@ -356,4 +362,4 @@ function displayMainTags(tags) {
 }
 
 initTheme();
-updateLanguage(currentLang);
+updateLanguage(window.currentLang);
