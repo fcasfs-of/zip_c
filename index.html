@@ -10,17 +10,22 @@
 <body>
 
     <header>
-        <div class="logo">AudioMeta <span>Pro</span></div>
+        <!-- Título do Header acoplado com Ícone SVG Geométrico Moderno -->
+        <div class="logo" style="display: flex; align-items: center; gap: 0.65rem;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));">
+                <path d="M12 2v20M17 5v14M22 9v6M7 7v10M2 10v4"/>
+            </svg>
+            <span>AudioMeta <span>Pro</span></span>
+        </div>
+
         <div class="controls-wrapper" style="display: flex; align-items: center; gap: 1rem;">
-            <!-- Botão Alternador de Temas Claro/Escuro Moderno -->
+            <!-- Botão Alternador de Temas Claro/Escuro -->
             <button id="btn-theme" class="theme-toggle-btn" title="Alternar Tema" style="background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; transition: all 0.2s;">
-                <!-- Ícone do Sol (Estilo Outline - Visível no Modo Dark) -->
                 <svg id="svg-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                <!-- Ícone da Lua (Estilo Outline - Visível no Modo Light) -->
                 <svg id="svg-moon" class="field-hidden" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
             </button>
 
-            <!-- Alternador de Idiomas Minimalista -->
+            <!-- Alternador de Idiomas -->
             <div class="lang-selector">
                 <button id="btn-pt" class="active">PT</button>
                 <button id="btn-en">EN</button>
@@ -41,7 +46,6 @@
             <div class="meta-card">
                 <div class="cover-wrapper">
                     <div class="no-cover" id="default-cover">
-                        <!-- Ícone de Música Geométrico Minimalista Padronizado -->
                         <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                     </div>
                     <img id="cover-art" alt="Cover Art" class="field-hidden">
@@ -56,6 +60,12 @@
                         <div class="info-item"><span class="label" id="lbl-genre">Gênero</span><span class="val" id="val-genre">-</span></div>
                         <div class="info-item"><span class="label" id="lbl-track">Faixa</span><span class="val" id="val-track">-</span></div>
                     </div>
+                    
+                    <!-- Botão de Exportação e Download de Dados via downloader.js -->
+                    <button id="btn-download-meta" class="field-hidden" style="margin-top: 1.5rem; background: transparent; border: 1px solid var(--accent); color: var(--text-main); padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span id="txt-btn-download">Baixar Dados</span>
+                    </button>
                 </div>
             </div>
 
@@ -77,7 +87,13 @@
         </section>
     </main>
 
-    <!-- Componente Fixo Inferior do Player de Áudio Dark/Light Premium Customizado -->
+    <!-- Rodapé Institucional com Créditos de Desenvolvimento -->
+    <footer style="width: 100%; text-align: center; padding: 2rem 1rem; border-top: 1px solid var(--border); background: rgba(2, 6, 23, 0.05); font-size: 0.8rem; color: var(--text-muted);">
+        <p>Desenvolvido por <strong style="color: var(--text-main); font-weight: 600;">FCAS-OF</strong></p>
+        <p style="margin-top: 0.25rem;"><a href="https://cloud-fs.net" target="_blank" style="color: var(--accent); text-decoration: none; font-family: monospace; transition: color 0.2s;">fcasfs-of.cloud-fs.net</a></p>
+    </footer>
+
+    <!-- Componente Fixo Inferior do Player de Áudio Premium Customizado -->
     <div class="audio-player" id="audio-player">
         <audio id="main-audio"></audio>
         <div class="player-grid">
@@ -94,7 +110,6 @@
             <!-- Zona Central: Controles de Pulo Temporal com Ícones de Traço Fino e Linha de Tempo -->
             <div class="player-controls">
                 <div class="control-buttons">
-                    <!-- Botão Retroceder 10 segundos Moderno -->
                     <button id="btn-rewind" title="Voltar 10s">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -102,7 +117,6 @@
                             <text x="12" y="15" font-size="7" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">10</text>
                         </svg>
                     </button>
-                    <!-- Botão Central Play/Pause Redondo Estilo Outline -->
                     <button id="btn-play" class="play-main">
                         <svg id="svg-play" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M8 5v14l11-7z"/>
@@ -112,7 +126,6 @@
                             <line x1="14" y1="4" x2="14" y2="20"></line>
                         </svg>
                     </button>
-                    <!-- Botão Avançar 10 segundos Moderno -->
                     <button id="btn-forward" title="Avançar 10s">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -150,8 +163,9 @@
         </div>
     </div>
 
-    <!-- Scripts Separados e Organizados -->
+    <!-- Scripts Modulares Isolados -->
     <script src="app.js"></script>
     <script src="player.js"></script>
+    <script src="downloader.js"></script>
 </body>
 </html>
