@@ -25,13 +25,16 @@ const langData = {
     }
 };
 
-// Escopos globais compartilhados com downloader.js e player.js
 window.currentLang = localStorage.getItem("audioMeta_lang") || "pt";
 window.dynamicDiscoveredTags = {};
-
 let currentTheme = localStorage.getItem("audioMeta_theme") || "dark";
 
+// DOM Elements
 const txtDrop = document.getElementById("txt-drop");
+const txtUrlLabel = document.getElementById("txt-url-label");
+const txtUrlBtn = document.getElementById("txt-url-btn");
+const inputUrl = document.getElementById("input-url");
+const btnLoadUrl = document.getElementById("btn-load-url");
 const txtMetaTitle = document.getElementById("txt-meta-title");
 const txtLyricsTitle = document.getElementById("txt-lyrics-title");
 const txtTechTitle = document.getElementById("txt-tech-title");
@@ -78,9 +81,7 @@ function updateThemeButtonIcon() {
     }
 }
 
-if (btnTheme) {
-    btnTheme.addEventListener("click", toggleTheme);
-}
+if (btnTheme) btnTheme.addEventListener("click", toggleTheme);
 
 function updateLanguage(lang) {
     window.currentLang = lang;
@@ -92,6 +93,9 @@ function updateLanguage(lang) {
     if (btnEn) btnEn.classList.toggle("active", lang === "en");
     
     if (txtDrop) txtDrop.innerText = langData[lang].drop;
+    if (txtUrlLabel) txtUrlLabel.innerText = lang === "pt" ? "Ou insira o link da música MP3:" : "Or enter MP3 audio link:";
+    if (txtUrlBtn) txtUrlBtn.innerText = lang === "pt" ? "Carregar" : "Load";
+    if (inputUrl) inputUrl.placeholder = lang === "pt" ? "https://exemplo.com" : "https://example.com";
     if (txtMetaTitle) txtMetaTitle.innerText = langData[lang].metaTitle;
     if (txtLyricsTitle) txtLyricsTitle.innerText = langData[lang].lyricsTitle;
     if (txtTechTitle) txtTechTitle.innerText = langData[lang].techTitle;
@@ -109,7 +113,6 @@ function updateLanguage(lang) {
     if (Object.keys(window.dynamicDiscoveredTags).length > 0) {
         displayMainTags(window.dynamicDiscoveredTags);
     }
-
     if (typeof window.updatePlayerLanguage === "function") {
         window.updatePlayerLanguage(langData[lang]);
     }
@@ -118,6 +121,7 @@ function updateLanguage(lang) {
 if (document.getElementById("btn-pt")) document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
 if (document.getElementById("btn-en")) document.getElementById("btn-en").addEventListener("click", () => updateLanguage("en"));
 
+// Módulo de Carregamento Local (File / Drag & Drop)
 if (dropZone && fileInput) {
     dropZone.addEventListener("click", () => fileInput.click());
     dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
@@ -125,28 +129,57 @@ if (dropZone && fileInput) {
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.style.borderColor = "var(--border)";
-        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files && e.dataTransfer.files.length) handleLocalFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener("change", (e) => {
-        if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
+        if (e.target.files && e.target.files.length) handleLocalFile(e.target.files[0]);
     });
 }
 
-function handleFile(file) {
+function handleLocalFile(file) {
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onload = function(e) {
-        const buffer = e.target.result;
-        window.dynamicDiscoveredTags = parseCompleteMP3(buffer);
-        displayMainTags(window.dynamicDiscoveredTags);
-        
-        const fallbackUnknown = langData[window.currentLang].unknown;
-        if (typeof window.initPlayer === "function") {
-            window.initPlayer(file, window.dynamicDiscoveredTags, fallbackUnknown);
-        }
+        processAudioBuffer(e.target.result, file, true);
     };
     reader.readAsArrayBuffer(file);
+}
+
+// Módulo de Carregamento Remoto (URL via HTTP/CORS)
+if (btnLoadUrl && inputUrl) {
+    btnLoadUrl.addEventListener("click", handleUrlInput);
+    inputUrl.addEventListener("keydown", (e) => { if(e.key === "Enter") handleUrlInput(); });
+}
+
+function handleUrlInput() {
+    const url = inputUrl.value.trim();
+    if (!url) return;
+    
+    // Extrai o nome do arquivo a partir do link final da URL
+    let filename = "remote_audio.mp3";
+    try { filename = url.substring(url.lastIndexOf('/') + 1).split('?')[0] || filename; } catch(e){}
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error();
+            return response.arrayBuffer();
+        })
+        .then(buffer => {
+            processAudioBuffer(buffer, { name: filename, remoteUrl: url }, false);
+        })
+        .catch(() => {
+            alert(window.currentLang === "pt" ? "Erro ao carregar URL. Verifique o link ou politicas CORS." : "Error loading URL. Verify the link or CORS policies.");
+        });
+}
+
+function processAudioBuffer(arrayBuffer, fileReference, isLocal) {
+    window.dynamicDiscoveredTags = parseCompleteMP3(arrayBuffer);
+    displayMainTags(window.dynamicDiscoveredTags);
+    
+    const fallbackUnknown = langData[window.currentLang].unknown;
+    if (typeof window.initPlayer === "function") {
+        window.initPlayer(fileReference, window.dynamicDiscoveredTags, fallbackUnknown, isLocal);
+    }
 }
 
 function parseCompleteMP3(buffer) {
@@ -158,12 +191,7 @@ function parseCompleteMP3(buffer) {
     if (view.getUint8(0) === 0x49 && view.getUint8(1) === 0x44 && view.getUint8(2) === 0x33) {
         const version = view.getUint8(3);
         let offset = 10;
-        
-        const totalSize = ((view.getUint8(6) & 0x7F) << 21) | 
-                          ((view.getUint8(7) & 0x7F) << 14) | 
-                          ((view.getUint8(8) & 0x7F) << 7)  | 
-                          (view.getUint8(9) & 0x7F);
-                          
+        const totalSize = ((view.getUint8(6) & 0x7F) << 21) | ((view.getUint8(7) & 0x7F) << 14) | ((view.getUint8(8) & 0x7F) << 7) | (view.getUint8(9) & 0x7F);
         const limit = Math.min(totalSize + 10, buffer.byteLength);
 
         while (offset < limit - 10) {
@@ -175,21 +203,16 @@ function parseCompleteMP3(buffer) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2));
                 frameSize = (view.getUint8(offset+3) << 16) | (view.getUint8(offset+4) << 8) | view.getUint8(offset+5);
                 headerSize = 6;
-            } else if (version === 3) {
+            } else if (version === 3 || version === 4) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2), view.getUint8(offset+3));
-                frameSize = (view.getUint8(offset+4) << 24) | (view.getUint8(offset+5) << 16) | (view.getUint8(offset+6) << 8) | view.getUint8(offset+7);
-            } else if (version === 4) {
-                frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2), view.getUint8(offset+3));
-                frameSize = ((view.getUint8(offset+4) & 0x7F) << 21) | 
-                            ((view.getUint8(offset+5) & 0x7F) << 14) | 
-                            ((view.getUint8(offset+6) & 0x7F) << 7)  | 
-                            (view.getUint8(offset+7) & 0x7F);
+                if (version === 3) {
+                    frameSize = (view.getUint8(offset+4) << 24) | (view.getUint8(offset+5) << 16) | (view.getUint8(offset+6) << 8) | view.getUint8(offset+7);
+                } else {
+                    frameSize = ((view.getUint8(offset+4) & 0x7F) << 21) | ((view.getUint8(offset+5) & 0x7F) << 14) | ((view.getUint8(offset+6) & 0x7F) << 7) | (view.getUint8(offset+7) & 0x7F);
+                }
             }
 
-            if (!frameId || frameId.charCodeAt(0) === 0 || frameSize <= 0 || (offset + headerSize + frameSize) > limit) {
-                break;
-            }
-            
+            if (!frameId || frameId.charCodeAt(0) === 0 || frameSize <= 0 || (offset + headerSize + frameSize) > limit) break;
             let dataOffset = offset + headerSize;
 
             try {
@@ -202,7 +225,6 @@ function parseCompleteMP3(buffer) {
                     tags.base64Cover = readPictureFrame(view, dataOffset, frameSize, version);
                 }
             } catch(err) {}
-            
             offset += headerSize + frameSize;
         }
     }
@@ -217,7 +239,6 @@ function parseCompleteMP3(buffer) {
             if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
                 const byte2 = view.getUint8(syncOffset + 2);
                 const byte3 = view.getUint8(syncOffset + 3);
-
                 const sampleRate = sampleRatesTable[(byte2 & 0x0C) >> 2];
                 const channels = ((byte3 & 0xC0) >> 6) === 3 ? "Mono" : "Stereo";
                 const bitrate = bitratesTable[(byte2 & 0xF0) >> 4];
@@ -237,22 +258,17 @@ function parseCompleteMP3(buffer) {
     tags.year = tags._raw["TYER"] || tags._raw["TYE"] || tags._raw["TDRC"] || "";
     tags.genre = tags._raw["TCON"] || tags._raw["TCO"] || "";
     tags.track = tags._raw["TRCK"] || tags._raw["TRK"] || "";
-
     return tags;
 }
 
 function readTextFrame(view, offset, size) {
     if (size <= 1) return "";
-    const encoding = view.getUint8(offset);
-    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1);
-    return decodeString(u8, encoding);
+    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1), view.getUint8(offset));
 }
 
 function readLyricsFrame(view, offset, size) {
     if (size <= 5) return "";
-    const encoding = view.getUint8(offset);
-    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
-    return decodeString(u8, encoding);
+    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5), view.getUint8(offset));
 }
 
 function decodeString(uint8Array, encoding) {
@@ -274,13 +290,9 @@ function decodeString(uint8Array, encoding) {
         } else {
             decoded = new TextDecoder('windows-1252').decode(cleanBytes);
         }
-
-        const cjkRegex = /[\u4e00-\u9fa5\u3040-\u30ff]/;
-        if (cjkRegex.test(decoded)) {
-            const strippedBytes = cleanBytes.filter(b => b >= 32 || b === 10 || b === 13);
-            decoded = new TextDecoder('windows-1252').decode(strippedBytes);
+        if (/[\u4e00-\u9fa5\u3040-\u30ff]/.test(decoded)) {
+            decoded = new TextDecoder('windows-1252').decode(cleanBytes.filter(b => b >= 32 || b === 10 || b === 13));
         }
-
         return decoded.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
     } catch(e) { return ""; }
 }
@@ -302,16 +314,13 @@ function readPictureFrame(view, offset, size, version) {
             if (mimeChars.length) mimeType = mimeChars.join("");
             current += 2;
         }
-
         while (view.getUint8(current) !== 0 && current < end) current++;
         current++;
-
         if (current >= end) return "";
         
         const imgBytes = new Uint8Array(view.buffer, view.byteOffset + current, end - current);
         let binary = '';
-        const len = imgBytes.byteLength;
-        for (let i = 0; i < len; i++) binary += String.fromCharCode(imgBytes[i]);
+        for (let i = 0; i < imgBytes.byteLength; i++) binary += String.fromCharCode(imgBytes[i]);
         return `data:${mimeType};base64,${btoa(binary)}`;
     } catch(e) { return ""; }
 }
@@ -319,19 +328,16 @@ function readPictureFrame(view, offset, size, version) {
 function displayMainTags(tags) {
     const metaContainer = document.getElementById("meta-container");
     if (metaContainer) metaContainer.classList.remove("field-hidden");
-    
     const btnDownloadMeta = document.getElementById("btn-download-meta");
     if (btnDownloadMeta) btnDownloadMeta.classList.remove("field-hidden");
     
     const fallback = langData[window.currentLang].unknown;
-    
     if (document.getElementById("val-title")) document.getElementById("val-title").innerText = tags.title || fallback;
     if (document.getElementById("val-artist")) document.getElementById("val-artist").innerText = tags.artist || fallback;
     if (document.getElementById("val-album")) document.getElementById("val-album").innerText = tags.album || fallback;
     if (document.getElementById("val-year")) document.getElementById("val-year").innerText = tags.year || fallback;
     if (document.getElementById("val-genre")) document.getElementById("val-genre").innerText = tags.genre || fallback;
     if (document.getElementById("val-track")) document.getElementById("val-track").innerText = tags.track || fallback;
-
     if (document.getElementById("val-bitrate")) document.getElementById("val-bitrate").innerText = tags.technical.bitrate || "-";
     if (document.getElementById("val-frequency")) document.getElementById("val-frequency").innerText = tags.technical.frequency || "-";
     if (document.getElementById("val-channels")) document.getElementById("val-channels").innerText = tags.technical.channels || "-";
