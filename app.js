@@ -9,7 +9,8 @@ const langData = {
         playerEmptyArtist: "Aguardando arquivo",
         lyricsTitle: "Letras da Música",
         techTitle: "Propriedades Técnicas do Arquivo",
-        lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio"
+        lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio",
+        corsError: "URL remota com restrição CORS. Áudio carregado diretamente no player."
     },
     en: {
         drop: "Drag your MP3 here or click to browse",
@@ -21,20 +22,17 @@ const langData = {
         playerEmptyArtist: "Waiting for file",
         lyricsTitle: "Lyrics",
         techTitle: "Technical Properties",
-        lblBitrate: "Bitrate", lblFrequency: "Sample Rate", lblChannels: "Audio Channels"
+        lblBitrate: "Bitrate", lblFrequency: "Sample Rate", lblChannels: "Audio Channels",
+        corsError: "Remote URL restricted by CORS. Audio loaded directly into player."
     }
 };
 
 window.currentLang = localStorage.getItem("audioMeta_lang") || "pt";
 window.dynamicDiscoveredTags = {};
+
 let currentTheme = localStorage.getItem("audioMeta_theme") || "dark";
 
-// DOM Elements
 const txtDrop = document.getElementById("txt-drop");
-const txtUrlLabel = document.getElementById("txt-url-label");
-const txtUrlBtn = document.getElementById("txt-url-btn");
-const inputUrl = document.getElementById("input-url");
-const btnLoadUrl = document.getElementById("btn-load-url");
 const txtMetaTitle = document.getElementById("txt-meta-title");
 const txtLyricsTitle = document.getElementById("txt-lyrics-title");
 const txtTechTitle = document.getElementById("txt-tech-title");
@@ -51,6 +49,10 @@ const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
 const btnTheme = document.getElementById("btn-theme");
 const txtBtnDownload = document.getElementById("txt-btn-download");
+
+// Inputs de URL
+const btnUrlSubmit = document.getElementById("btn-url-submit");
+const urlInput = document.getElementById("url-input");
 
 function initTheme() {
     document.body.classList.remove("light-theme", "dark-theme");
@@ -93,9 +95,6 @@ function updateLanguage(lang) {
     if (btnEn) btnEn.classList.toggle("active", lang === "en");
     
     if (txtDrop) txtDrop.innerText = langData[lang].drop;
-    if (txtUrlLabel) txtUrlLabel.innerText = lang === "pt" ? "Ou insira o link da música MP3:" : "Or enter MP3 audio link:";
-    if (txtUrlBtn) txtUrlBtn.innerText = lang === "pt" ? "Carregar" : "Load";
-    if (inputUrl) inputUrl.placeholder = lang === "pt" ? "https://exemplo.com" : "https://example.com";
     if (txtMetaTitle) txtMetaTitle.innerText = langData[lang].metaTitle;
     if (txtLyricsTitle) txtLyricsTitle.innerText = langData[lang].lyricsTitle;
     if (txtTechTitle) txtTechTitle.innerText = langData[lang].techTitle;
@@ -110,6 +109,9 @@ function updateLanguage(lang) {
     if (lblChannels) lblChannels.innerText = langData[lang].lblChannels;
     if (txtBtnDownload) txtBtnDownload.innerText = lang === "pt" ? "Baixar Dados" : "Download Data";
 
+    const txtUrlTitle = document.getElementById("txt-url-title");
+    if (txtUrlTitle) txtUrlTitle.innerText = lang === "pt" ? "Ou insira a URL do áudio MP3" : "Or enter MP3 audio URL";
+
     if (Object.keys(window.dynamicDiscoveredTags).length > 0) {
         displayMainTags(window.dynamicDiscoveredTags);
     }
@@ -121,7 +123,6 @@ function updateLanguage(lang) {
 if (document.getElementById("btn-pt")) document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
 if (document.getElementById("btn-en")) document.getElementById("btn-en").addEventListener("click", () => updateLanguage("en"));
 
-// Módulo de Carregamento Local (File / Drag & Drop)
 if (dropZone && fileInput) {
     dropZone.addEventListener("click", () => fileInput.click());
     dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
@@ -136,56 +137,66 @@ if (dropZone && fileInput) {
     });
 }
 
+// Disparador de input por Link URL
+if (btnUrlSubmit && urlInput) {
+    btnUrlSubmit.addEventListener("click", () => {
+        const urlValue = urlInput.value.trim();
+        if (urlValue) handleUrlFile(urlValue);
+    });
+    urlInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            const urlValue = urlInput.value.trim();
+            if (urlValue) handleUrlFile(urlValue);
+        }
+    });
+}
+
 function handleLocalFile(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
-        processAudioBuffer(e.target.result, file, true);
+        window.dynamicDiscoveredTags = parseCompleteMP3(e.target.result);
+        displayMainTags(window.dynamicDiscoveredTags);
+        if (typeof window.initPlayer === "function") {
+            window.initPlayer(URL.createObjectURL(file), file.name, window.dynamicDiscoveredTags, langData[window.currentLang].unknown);
+        }
     };
     reader.readAsArrayBuffer(file);
 }
 
-// Módulo de Carregamento Remoto (URL via HTTP/CORS)
-if (btnLoadUrl && inputUrl) {
-    btnLoadUrl.addEventListener("click", handleUrlInput);
-    inputUrl.addEventListener("keydown", (e) => { if(e.key === "Enter") handleUrlInput(); });
-}
-
-function handleUrlInput() {
-    const url = inputUrl.value.trim();
-    if (!url) return;
+function handleUrlFile(url) {
+    const filename = url.substring(url.lastIndexOf('/') + 1) || "Remoto.mp3";
     
-    // Extrai o nome do arquivo a partir do link final da URL
-    let filename = "remote_audio.mp3";
-    try { filename = url.substring(url.lastIndexOf('/') + 1).split('?')[0] || filename; } catch(e){}
-
+    // Tenta ler binários via Fetch (pode falhar silenciosamente se o servidor de terceiros travar o CORS)
     fetch(url)
         .then(response => {
-            if (!response.ok) throw new Error();
+            if (!response.ok) throw new Error("Network error");
             return response.arrayBuffer();
         })
         .then(buffer => {
-            processAudioBuffer(buffer, { name: filename, remoteUrl: url }, false);
+            window.dynamicDiscoveredTags = parseCompleteMP3(buffer);
+            displayMainTags(window.dynamicDiscoveredTags);
+            if (typeof window.initPlayer === "function") {
+                window.initPlayer(url, filename, window.dynamicDiscoveredTags, langData[window.currentLang].unknown);
+            }
         })
         .catch(() => {
-            alert(window.currentLang === "pt" ? "Erro ao carregar URL. Verifique o link ou politicas CORS." : "Error loading URL. Verify the link or CORS policies.");
+            // Fallback CORS: Limpa erros críticos do console e alimenta o player diretamente com o stream
+            window.dynamicDiscoveredTags = {
+                title: filename, artist: langData[window.currentLang].corsError,
+                album: "", year: "", genre: "", track: "",
+                lyrics: "", technical: { bitrate: "Streaming", frequency: "-", channels: "-" }, base64Cover: ""
+            };
+            displayMainTags(window.dynamicDiscoveredTags);
+            if (typeof window.initPlayer === "function") {
+                window.initPlayer(url, filename, window.dynamicDiscoveredTags, langData[window.currentLang].unknown);
+            }
         });
-}
-
-function processAudioBuffer(arrayBuffer, fileReference, isLocal) {
-    window.dynamicDiscoveredTags = parseCompleteMP3(arrayBuffer);
-    displayMainTags(window.dynamicDiscoveredTags);
-    
-    const fallbackUnknown = langData[window.currentLang].unknown;
-    if (typeof window.initPlayer === "function") {
-        window.initPlayer(fileReference, window.dynamicDiscoveredTags, fallbackUnknown, isLocal);
-    }
 }
 
 function parseCompleteMP3(buffer) {
     const view = new DataView(buffer);
     const tags = { _raw: {}, lyrics: "", technical: { bitrate: "-", frequency: "-", channels: "-" }, base64Cover: "" };
-    
     if (buffer.byteLength < 10) return tags;
 
     if (view.getUint8(0) === 0x49 && view.getUint8(1) === 0x44 && view.getUint8(2) === 0x33) {
@@ -195,21 +206,17 @@ function parseCompleteMP3(buffer) {
         const limit = Math.min(totalSize + 10, buffer.byteLength);
 
         while (offset < limit - 10) {
-            let frameId = "";
-            let frameSize = 0;
-            let headerSize = 10;
-
+            let frameId = "", frameSize = 0, headerSize = 10;
             if (version === 2) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2));
                 frameSize = (view.getUint8(offset+3) << 16) | (view.getUint8(offset+4) << 8) | view.getUint8(offset+5);
                 headerSize = 6;
-            } else if (version === 3 || version === 4) {
+            } else if (version === 3) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2), view.getUint8(offset+3));
-                if (version === 3) {
-                    frameSize = (view.getUint8(offset+4) << 24) | (view.getUint8(offset+5) << 16) | (view.getUint8(offset+6) << 8) | view.getUint8(offset+7);
-                } else {
-                    frameSize = ((view.getUint8(offset+4) & 0x7F) << 21) | ((view.getUint8(offset+5) & 0x7F) << 14) | ((view.getUint8(offset+6) & 0x7F) << 7) | (view.getUint8(offset+7) & 0x7F);
-                }
+                frameSize = (view.getUint8(offset+4) << 24) | (view.getUint8(offset+5) << 16) | (view.getUint8(offset+6) << 8) | view.getUint8(offset+7);
+            } else if (version === 4) {
+                frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2), view.getUint8(offset+3));
+                frameSize = ((view.getUint8(offset+4) & 0x7F) << 21) | ((view.getUint8(offset+5) & 0x7F) << 14) | ((view.getUint8(offset+6) & 0x7F) << 7) | (view.getUint8(offset+7) & 0x7F);
             }
 
             if (!frameId || frameId.charCodeAt(0) === 0 || frameSize <= 0 || (offset + headerSize + frameSize) > limit) break;
@@ -224,7 +231,7 @@ function parseCompleteMP3(buffer) {
                 } else if (frameId === "APIC" || frameId === "PIC") {
                     tags.base64Cover = readPictureFrame(view, dataOffset, frameSize, version);
                 }
-            } catch(err) {}
+            } catch(e) {}
             offset += headerSize + frameSize;
         }
     }
@@ -234,7 +241,6 @@ function parseCompleteMP3(buffer) {
         const maxSearch = Math.min(buffer.byteLength - 4, 64000);
         const sampleRatesTable = [44100, 48000, 32000, 0];
         const bitratesTable = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
-        
         while (syncOffset < maxSearch) {
             if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
                 const byte2 = view.getUint8(syncOffset + 2);
@@ -242,7 +248,6 @@ function parseCompleteMP3(buffer) {
                 const sampleRate = sampleRatesTable[(byte2 & 0x0C) >> 2];
                 const channels = ((byte3 & 0xC0) >> 6) === 3 ? "Mono" : "Stereo";
                 const bitrate = bitratesTable[(byte2 & 0xF0) >> 4];
-
                 tags.technical.frequency = sampleRate ? `${sampleRate} Hz` : "-";
                 tags.technical.channels = channels;
                 tags.technical.bitrate = bitrate ? `${bitrate} kbps` : "MPEG Audio";
@@ -276,20 +281,12 @@ function decodeString(uint8Array, encoding) {
         let cleanBytes = uint8Array.filter((b) => encoding === 0 ? b !== 0 : true);
         if (cleanBytes.length === 0) return "";
         let decoded = "";
-        
         if (encoding === 1 || encoding === 2) {
-            if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) {
-                decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
-            } else if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF) {
-                decoded = new TextDecoder('utf-16be').decode(cleanBytes.subarray(2));
-            } else {
-                decoded = new TextDecoder('utf-16').decode(cleanBytes);
-            }
-        } else if (encoding === 3) {
-            decoded = new TextDecoder('utf-8').decode(cleanBytes);
-        } else {
-            decoded = new TextDecoder('windows-1252').decode(cleanBytes);
-        }
+            if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
+            else if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF) decoded = new TextDecoder('utf-16be').decode(cleanBytes.subarray(2));
+            else decoded = new TextDecoder('utf-16').decode(cleanBytes);
+        } else if (encoding === 3) decoded = new TextDecoder('utf-8').decode(cleanBytes);
+        else decoded = new TextDecoder('windows-1252').decode(cleanBytes);
         if (/[\u4e00-\u9fa5\u3040-\u30ff]/.test(decoded)) {
             decoded = new TextDecoder('windows-1252').decode(cleanBytes.filter(b => b >= 32 || b === 10 || b === 13));
         }
@@ -300,24 +297,17 @@ function decodeString(uint8Array, encoding) {
 function readPictureFrame(view, offset, size, version) {
     try {
         const end = offset + size;
-        let current = offset + 1;
-        let mimeType = "image/jpeg";
-
-        if (version === 2) {
-            current = offset + 5;
-        } else {
+        let current = offset + 1, mimeType = "image/jpeg";
+        if (version === 2) current = offset + 5;
+        else {
             let mimeChars = [];
-            while (view.getUint8(current) !== 0 && current < end) {
-                mimeChars.push(String.fromCharCode(view.getUint8(current)));
-                current++;
-            }
+            while (view.getUint8(current) !== 0 && current < end) { mimeChars.push(String.fromCharCode(view.getUint8(current))); current++; }
             if (mimeChars.length) mimeType = mimeChars.join("");
             current += 2;
         }
         while (view.getUint8(current) !== 0 && current < end) current++;
         current++;
         if (current >= end) return "";
-        
         const imgBytes = new Uint8Array(view.buffer, view.byteOffset + current, end - current);
         let binary = '';
         for (let i = 0; i < imgBytes.byteLength; i++) binary += String.fromCharCode(imgBytes[i]);
@@ -342,28 +332,14 @@ function displayMainTags(tags) {
     if (document.getElementById("val-frequency")) document.getElementById("val-frequency").innerText = tags.technical.frequency || "-";
     if (document.getElementById("val-channels")) document.getElementById("val-channels").innerText = tags.technical.channels || "-";
 
-    const lyricsCard = document.getElementById("lyrics-card");
-    const lyricsText = document.getElementById("lyrics-text");
-    if (tags.lyrics && lyricsCard && lyricsText) {
-        lyricsCard.classList.remove("field-hidden");
-        lyricsText.innerText = tags.lyrics;
-    } else if (lyricsCard) {
-        lyricsCard.classList.add("field-hidden");
-    }
+    const lyricsCard = document.getElementById("lyrics-card"), lyricsText = document.getElementById("lyrics-text");
+    if (tags.lyrics && lyricsCard && lyricsText) { lyricsCard.classList.remove("field-hidden"); lyricsText.innerText = tags.lyrics; }
+    else if (lyricsCard) lyricsCard.classList.add("field-hidden");
 
-    const img = document.getElementById("cover-art");
-    const def = document.getElementById("default-cover");
+    const img = document.getElementById("cover-art"), def = document.getElementById("default-cover");
     if (img && def) {
-        if (tags.base64Cover && tags.base64Cover.length > 50) {
-            img.src = tags.base64Cover;
-            img.classList.remove("field-hidden");
-            def.classList.add("field-hidden");
-        } else {
-            img.src = "";
-            img.classList.add("field-hidden");
-            def.innerHTML = `<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>`;
-            def.classList.remove("field-hidden");
-        }
+        if (tags.base64Cover && tags.base64Cover.length > 50) { img.src = tags.base64Cover; img.classList.remove("field-hidden"); def.classList.add("field-hidden"); }
+        else { img.src = ""; img.classList.add("field-hidden"); def.innerHTML = `<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>`; def.classList.remove("field-hidden"); }
     }
 }
 
