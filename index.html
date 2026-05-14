@@ -31,12 +31,35 @@
     </header>
 
     <main class="container">
-        <section class="drop-zone" id="drop-zone">
-            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            <p id="txt-drop">Arraste seu MP3 aqui ou clique para buscar</p>
-            <input type="file" id="file-input" accept="audio/mp3, audio/mpeg" hidden>
+        <!-- Componente Avançado de Entrada: Arquivo ou Link Web MP3 -->
+        <section class="input-card" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);">
+            <div class="input-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+                <button id="tab-file" class="tab-btn active" style="background: transparent; border: none; color: var(--text-main); font-weight: 700; font-size: 0.85rem; padding: 0.5rem 1rem; cursor: pointer; border-radius: 6px;">Arquivo Local</button>
+                <button id="tab-link" class="tab-btn" style="background: transparent; border: none; color: var(--text-muted); font-weight: 700; font-size: 0.85rem; padding: 0.5rem 1rem; cursor: pointer; border-radius: 6px;">Link Web (URL)</button>
+            </div>
+
+            <!-- Painel 1: Drag & Drop Tradicional -->
+            <div id="panel-file" class="input-panel">
+                <div class="drop-zone" id="drop-zone" style="padding: 3rem 2rem;">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <p id="txt-drop">Arraste seu MP3 aqui ou clique para buscar</p>
+                    <input type="file" id="file-input" accept="audio/mp3, audio/mpeg" hidden>
+                </div>
+            </div>
+
+            <!-- Painel 2: Caixa de Entrada por Link Remoto -->
+            <div id="panel-link" class="input-panel field-hidden">
+                <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+                    <p id="txt-link-label" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">Insira o link direto do arquivo de áudio MP3:</p>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="url" id="url-input" placeholder="https://exemplo.com" style="flex-grow: 1; background: rgba(100,116,139,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; color: var(--text-main); font-size: 0.9rem; outline: none; transition: border-color 0.2s;">
+                        <button id="btn-load-url" style="background: var(--accent); border: none; color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s;">Carregar</button>
+                    </div>
+                </div>
+            </div>
         </section>
 
+        <!-- Painel de Exibição dos Metadados Extraídos -->
         <section class="meta-container field-hidden" id="meta-container">
             <div class="meta-card">
                 <div class="cover-wrapper">
@@ -79,15 +102,16 @@
         </section>
     </main>
 
-    <!-- Rodapé Minimalista com Link Atualizado -->
     <footer class="app-footer">
         <p>Desenvolvido por <strong>FCAS-OF</strong></p>
-        <p class="footer-link"><a href="https://fcasfs-of.cloud-fs.net" target="_blank">fcasfs-of.cloud-fs.net</a></p>
+        <p class="footer-link"><a href="https://cloud-fs.net" target="_blank">fcasfs-of.cloud-fs.net</a></p>
     </footer>
 
+    <!-- Componente Fixo Inferior do Player de Áudio Dark/Light Premium Customizado -->
     <div class="audio-player" id="audio-player">
         <audio id="main-audio"></audio>
         <div class="player-grid">
+            
             <div class="player-track-info">
                 <img id="player-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18V5l12-2v13'></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>" alt="">
                 <div>
@@ -105,13 +129,20 @@
                             <text x="12" y="15" font-size="7" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">10</text>
                         </svg>
                     </button>
+                    <!-- Novo Botão de Parar (Stop) Geométrico -->
+                    <button id="btn-stop" title="Parar" style="color: var(--p-text-muted);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        </svg>
+                    </button>
                     <button id="btn-play" class="play-main">
                         <svg id="svg-play" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M8 5v14l11-7z"/>
                         </svg>
+                        <!-- Novo Ícone de Pausa Estilo Outline Minimalista Moderno -->
                         <svg id="svg-pause" class="field-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="10" y1="4" x2="10" y2="20"></line>
-                            <line x1="14" y1="4" x2="14" y2="20"></line>
+                            <rect x="5" y="3" width="4" height="18" rx="1"/>
+                            <rect x="15" y="3" width="4" height="18" rx="1"/>
                         </svg>
                     </button>
                     <button id="btn-forward" title="Avançar 10s">
@@ -146,6 +177,7 @@
                     <div class="slider-thumb" id="volume-thumb"></div>
                 </div>
             </div>
+            
         </div>
     </div>
 
