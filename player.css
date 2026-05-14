@@ -1,8 +1,7 @@
 /* ==========================================================================
-   COMPONENTES DE SUPORTE E VARIÁVEIS DO PLAYER
+   VARIÁVEIS DE COR REATIVAS DO PLAYER
    ========================================================================== */
-   :root {
-    /* Padrão Inicial (Fallback Dark) */
+:root {
     --p-bg: #090d16;
     --p-border: #1e293b;
     --p-text-main: #f8fafc;
@@ -13,7 +12,6 @@
     --p-shadow: rgba(0, 0, 0, 0.6);
 }
 
-/* Modificações automáticas via escopo de classe do corpo (Tags de Tema) */
 .dark-theme-theme, body.dark-theme {
     --p-bg: #090d16;
     --p-border: #1e293b;
@@ -37,7 +35,7 @@
 }
 
 /* ==========================================================================
-   ESTRUTURA FIXA E GRADE INFERIOR
+   ESTRUTURA COMPONENTE FIXA INFERIOR
    ========================================================================== */
 .audio-player {
     position: fixed;
@@ -62,7 +60,7 @@
 }
 
 /* ==========================================================================
-   ZONA ESQUERDA: MINIATURA E INFORMAÇÕES DA FAIXA
+   ZONA ESQUERDA: TRACK INFO
    ========================================================================== */
 .player-track-info {
     display: flex;
@@ -104,7 +102,7 @@
 }
 
 /* ==========================================================================
-   ZONA CENTRAL: BOTÕES GEOMÉTRICOS E CONTROLES
+   ZONA CENTRAL: ALINHAMENTO DE BOTÕES OUTLINE GEOMÉTRICOS
    ========================================================================== */
 .player-controls {
     display: flex;
@@ -117,7 +115,7 @@
 .control-buttons {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1rem; /* Compactado sutilmente para acomodar o botão extra de Stop */
 }
 
 .control-buttons button {
@@ -125,8 +123,8 @@
     border: none;
     color: var(--p-text-muted);
     cursor: pointer;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -145,27 +143,29 @@
     stroke-width: 2px;
 }
 
-/* Centralização do Texto Interno "10" do SVG */
 .control-buttons button text {
     font-family: system-ui, -apple-system, sans-serif;
     letter-spacing: -0.05em;
 }
 
-/* Botão Redondo Principal de Play/Pause */
+/* Botões do Núcleo Principal (Play / Pause / Stop) */
+.control-buttons button.play-main, 
+.control-buttons button.stop-main {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1s5);
+    transition: transform 0.2s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.2s ease;
+}
+
+/* Estilização Redonda do Play-Pause */
 .control-buttons button.play-main {
     background: var(--p-btn-main-bg);
     color: var(--p-btn-main-text);
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: transform 0.2s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.2s ease;
 }
 
 .control-buttons button.play-main:hover {
     transform: scale(1.05);
-    background: var(--p-btn-main-bg);
-    color: var(--p-btn-main-text);
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
 }
 
@@ -174,18 +174,38 @@
     height: 20px;
 }
 
-/* Ajuste de balanceamento geométrico para o triângulo de Play */
+/* Ajustes Finos de Centralização Geométrica em SVGs do Core */
 .control-buttons button.play-main #svg-play {
-    transform: translateX(1px);
+    transform: translateX(1px); /* Compensa a ponta do triângulo */
 }
 
-/* Ajuste geométrico do ícone de Pause */
 .control-buttons button.play-main #svg-pause {
-    stroke-width: 2.5px;
+    stroke-width: 2.5px; /* Deixa o ícone de pausa encorpado e profissional */
+}
+
+/* Estilização Mínima Redonda do Novo Botão de Stop */
+.control-buttons button.stop-main {
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--p-text-main);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--p-border);
+}
+
+.control-buttons button.stop-main:hover {
+    background: rgba(239, 68, 68, 0.15); /* Feedback sutil em vermelho ao passar o mouse */
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.control-buttons button.stop-main svg {
+    width: 16px;
+    height: 16px;
 }
 
 /* ==========================================================================
-   SISTEMA DE CONTROLES DESLIZANTES CUSTOMIZADOS (SLIDERS)
+   BARRAS CUSTOMIZADAS DE CONTROLE DESLIZANTE
    ========================================================================== */
 .progress-container {
     width: 100%;
@@ -200,7 +220,7 @@
 .custom-slider {
     position: relative;
     flex-grow: 1;
-    height: 20px; /* Área invisível expandida para facilitar capturas de cliques */
+    height: 20px;
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -221,7 +241,7 @@
     position: absolute;
     left: 0;
     height: 4px;
-    background: var(--accent); /* Compartilha a cor de destaque principal global */
+    background: var(--accent);
     border-radius: 9999px;
     width: 0%;
     pointer-events: none;
@@ -238,18 +258,17 @@
     top: 50%;
     left: 0%;
     pointer-events: none;
-    opacity: 0; /* Oculto por padrão para um visual limpo e minimalista */
+    opacity: 0;
     transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.3s ease;
 }
 
-/* Efeito Hover: Destaca e expande o marcador da barra */
 .custom-slider:hover .slider-thumb {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1.15);
 }
 
 /* ==========================================================================
-   ZONA DIREITA: AJUSTE DE VOLUME E MUTING
+   ZONA DIREITA: VOLUME
    ========================================================================== */
 .volume-container {
     display: flex;
@@ -288,13 +307,12 @@
     stroke-width: 2px;
 }
 
-/* Auxiliares */
 .field-hidden {
     display: none !important;
 }
 
 /* ==========================================================================
-   DISPOSITIVOS MÓVEIS (RESPONSIVIDADE)
+   RESPONSIVIDADE MÓVEL
    ========================================================================== */
 @media (max-width: 768px) {
     .audio-player {
@@ -307,7 +325,7 @@
     }
     
     .volume-container {
-        display: none; /* Remove o volume em smartphones para focar na linha de tempo */
+        display: none;
     }
     
     .player-track-info {
