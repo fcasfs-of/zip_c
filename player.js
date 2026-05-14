@@ -15,8 +15,8 @@
     let isTrackLoaded = false;
     let currentTrackTags = null;
     let fallbackText = "Desconhecido";
+    let currentFileName = "";
 
-    // Carregar configurações salvas do localStorage
     function loadSavedSettings() {
         if (!audio || !volumeSlider) return;
 
@@ -37,20 +37,21 @@
         }
     }
 
-    // Inicialização da Faixa no Player
     window.initPlayer = function(file, tags, unknownFallback) {
-        if(!file || !audio) return;
+        if (!file || !audio) return;
         
         audio.src = URL.createObjectURL(file);
         isTrackLoaded = true;
         currentTrackTags = tags;
         fallbackText = unknownFallback;
+        currentFileName = file.name;
 
-        if (pTitle) pTitle.innerText = tags.title || file.name;
+        if (pTitle) pTitle.innerText = tags.title || currentFileName;
         if (pArtist) pArtist.innerText = tags.artist || fallbackText;
         
-        if(pThumb) {
-            if(tags.base64Cover && tags.base64Cover.length > 50) {
+        // Renderização imediata da capa no player de áudio inferior
+        if (pThumb) {
+            if (tags.base64Cover && tags.base64Cover.length > 50) {
                 pThumb.src = tags.base64Cover;
             } else {
                 pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%23888'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
@@ -59,22 +60,26 @@
         playAudio();
     };
 
-    // Callback de Tradução disparado pelo script principal
     window.updatePlayerLanguage = function(langStrings) {
         if (!pTitle || !pArtist) return;
         
         if (!isTrackLoaded) {
             pTitle.innerText = langStrings.playerEmptyTitle;
             pArtist.innerText = langStrings.playerEmptyArtist;
+            if (pThumb) {
+                pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%23888'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
+            }
         } else {
             fallbackText = langStrings.unknown;
+            if (!currentTrackTags || !currentTrackTags.title) {
+                pTitle.innerText = currentFileName;
+            }
             if (!currentTrackTags || !currentTrackTags.artist) {
                 pArtist.innerText = fallbackText;
             }
         }
     };
 
-    // Ouvintes de Eventos de Áudio
     if (btnPlay) {
         btnPlay.addEventListener("click", () => {
             if (!audio || !audio.src) return;
@@ -84,7 +89,7 @@
 
     function playAudio() {
         if (!audio) return;
-        audio.play().catch(function() { /* Captura bloqueios de autoplay do navegador */ });
+        audio.play().catch(function() {});
         if (svgPlay) svgPlay.classList.add("field-hidden");
         if (svgPause) svgPause.classList.remove("field-hidden");
     }
@@ -98,7 +103,7 @@
 
     if (audio) {
         audio.addEventListener("timeupdate", () => {
-            if(!audio.duration || isNaN(audio.duration)) return;
+            if (!audio.duration || isNaN(audio.duration)) return;
             const pct = (audio.currentTime / audio.duration) * 100;
             if (progressBar) progressBar.value = pct;
             if (timeCurrent) timeCurrent.innerText = formatTime(audio.currentTime);
@@ -123,8 +128,7 @@
             audio.volume = vol;
             localStorage.setItem("audioMeta_volume", vol);
             
-            // Auto desmuta ao arrastar a barra com o mute ativo
-            if(audio.muted && vol > 0) {
+            if (audio.muted && vol > 0) {
                 audio.muted = false;
                 localStorage.setItem("audioMeta_mute", "false");
                 if (btnMute) btnMute.style.opacity = "1";
@@ -142,12 +146,11 @@
     }
 
     function formatTime(secs) {
-        if(isNaN(secs) || secs < 0) return "0:00";
+        if (isNaN(secs) || secs < 0) return "0:00";
         const m = Math.floor(secs / 60);
         const s = Math.floor(secs % 60);
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    // Inicializa carregando os dados persistidos do hardware de som
     loadSavedSettings();
 })();
