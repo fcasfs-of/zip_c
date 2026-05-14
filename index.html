@@ -3,36 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MP3 MetaExtract & Player</title>
+    <title>AudioMeta Pro</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="player.css">
 </head>
 <body>
 
     <header>
-        <div class="logo-area">
-            <h1>MP3 MetaExtract</h1>
-        </div>
+        <div class="logo">AudioMeta <span>Pro</span></div>
         <div class="lang-selector">
-            <select id="lang-select">
-                <option value="pt">Português</option>
-                <option value="en">English</option>
-            </select>
+            <button id="btn-pt" class="active">PT</button>
+            <button id="btn-en">EN</button>
         </div>
     </header>
 
-    <main>
-        <div class="drop-zone" id="drop-zone">
-            <svg viewBox="0 0 24 24">
-                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
-            </svg>
-            <p id="txt-prompt"></p>
-            <input type="file" id="file-input" accept=".mp3">
-        </div>
+    <main class="container">
+        <section class="drop-zone" id="drop-zone">
+            <svg viewBox="0 0 24 24" width="48" height="48"><path fill="currentColor" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+            <p id="txt-drop">Arraste seu MP3 aqui ou clique para buscar</p>
+            <input type="file" id="file-input" accept="audio/mp3" hidden>
+        </section>
 
-        <div class="status-message" id="status-msg"></div>
-        <div class="result-card" id="result-card"></div>
+        <section class="meta-container field-hidden" id="meta-container">
+            <div class="meta-card">
+                <div class="cover-wrapper">
+                    <div class="no-cover" id="default-cover">
+                        <svg viewBox="0 0 24 24" width="64" height="64"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14H11V12H13V16ZM13 10H11V8H13V10Z"/></svg>
+                    </div>
+                    <img id="cover-art" alt="Cover Art" class="field-hidden">
+                </div>
+                <div class="meta-info">
+                    <h2 id="txt-meta-title">Metadados Extraídos</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label" id="lbl-title">Título</span>
+                            <span class="val" id="val-title">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label" id="lbl-artist">Artista</span>
+                            <span class="val" id="val-artist">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label" id="lbl-album">Álbum</span>
+                            <span class="val" id="val-album">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label" id="lbl-year">Ano</span>
+                            <span class="val" id="val-year">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label" id="lbl-genre">Gênero</span>
+                            <span class="val" id="val-genre">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label" id="lbl-track">Faixa</span>
+                            <span class="val" id="val-track">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
+
+    <div class="audio-player" id="audio-player">
+        <audio id="main-audio"></audio>
+        <div class="player-grid">
+            <div class="player-track-info">
+                <img id="player-thumb" src="data:image/svg+xml;utf8,<svg xmlns='w3.org' viewBox='0 0 24 24' fill='%23888'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>" alt="">
+                <div>
+                    <div class="player-title" id="player-title">Nenhuma música</div>
+                    <div class="player-artist" id="player-artist">Aguardando arquivo</div>
+                </div>
+            </div>
+            
+            <div class="player-controls">
+                <div class="control-buttons">
+                    <button id="btn-prev">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+                    </button>
+                    <button id="btn-play" class="play-main">
+                        <svg id="svg-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+                        <svg id="svg-pause" class="field-hidden" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button id="btn-next">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="m6 18 8.5-6L6 6v12zM16 6v12h2V6z"/></svg>
+                    </button>
+                </div>
+                <div class="progress-container">
+                    <span id="time-current">0:00</span>
+                    <input type="range" id="progress-bar" min="0" max="100" value="0">
+                    <span id="time-total">0:00</span>
+                </div>
+            </div>
+
+            <div class="volume-container">
+                <button id="btn-mute">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                </button>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1">
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
     <script src="player.js"></script>
