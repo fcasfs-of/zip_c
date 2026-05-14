@@ -7,13 +7,9 @@ const langData = {
         unknown: "Desconhecido",
         playerEmptyTitle: "Nenhuma música",
         playerEmptyArtist: "Aguardando arquivo",
-        extendedTitle: "Todos os Rótulos Encontrados (Tags ID3)",
         lyricsTitle: "Letras da Música",
         techTitle: "Propriedades Técnicas do Arquivo",
-        lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio",
-        TIT2: "Título", TPE1: "Artista", TALB: "Álbum", TYER: "Ano", TCON: "Gênero", TRCK: "Faixa",
-        COMM: "Comentários", TCOM: "Compositor", TEXT: "Letrista", TPE2: "Artista do Álbum",
-        TPUB: "Gravadora/Editora", TENC: "Codificado por", TSSE: "Configurações do Encoder"
+        lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio"
     },
     en: {
         drop: "Drag your MP3 here or click to browse",
@@ -23,13 +19,9 @@ const langData = {
         unknown: "Unknown",
         playerEmptyTitle: "No track selected",
         playerEmptyArtist: "Waiting for file",
-        extendedTitle: "All Discovered Labels (ID3 Tags)",
         lyricsTitle: "Lyrics",
         techTitle: "Technical Properties",
-        lblBitrate: "Bitrate", lblFrequency: "Sample Rate", lblChannels: "Audio Channels",
-        TIT2: "Title", TPE1: "Artist", TALB: "Album", TYER: "Year", TCON: "Genre", TRCK: "Track",
-        COMM: "Comments", TCOM: "Composer", TEXT: "Lyricist", TPE2: "Album Artist",
-        TPUB: "Publisher", TENC: "Encoded By", TSSE: "Encoder Settings"
+        lblBitrate: "Bitrate", lblFrequency: "Sample Rate", lblChannels: "Audio Channels"
     }
 };
 
@@ -38,7 +30,6 @@ let dynamicDiscoveredTags = {};
 
 const txtDrop = document.getElementById("txt-drop");
 const txtMetaTitle = document.getElementById("txt-meta-title");
-const txtExtendedTitle = document.getElementById("txt-extended-title");
 const txtLyricsTitle = document.getElementById("txt-lyrics-title");
 const txtTechTitle = document.getElementById("txt-tech-title");
 const lblTitle = document.getElementById("lbl-title");
@@ -62,7 +53,6 @@ function updateLanguage(lang) {
     
     if (txtDrop) txtDrop.innerText = langData[lang].drop;
     if (txtMetaTitle) txtMetaTitle.innerText = langData[lang].metaTitle;
-    if (txtExtendedTitle) txtExtendedTitle.innerText = langData[lang].extendedTitle;
     if (txtLyricsTitle) txtLyricsTitle.innerText = langData[lang].lyricsTitle;
     if (txtTechTitle) txtTechTitle.innerText = langData[lang].techTitle;
     if (lblTitle) lblTitle.innerText = langData[lang].title;
@@ -82,7 +72,6 @@ function updateLanguage(lang) {
     if (typeof window.updatePlayerLanguage === "function") {
         window.updatePlayerLanguage(langData[lang]);
     }
-    renderExtendedList();
 }
 
 if (document.getElementById("btn-pt")) document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
@@ -109,9 +98,7 @@ function handleFile(file) {
     reader.onload = function(e) {
         const buffer = e.target.result;
         dynamicDiscoveredTags = parseCompleteMP3(buffer);
-        
         displayMainTags(dynamicDiscoveredTags);
-        renderExtendedList();
         
         const fallbackUnknown = langData[currentLang].unknown;
         if (typeof window.initPlayer === "function") {
@@ -168,13 +155,10 @@ function parseCompleteMP3(buffer) {
                 if (frameId.startsWith("T") && frameId !== "TXXX" && frameId !== "TXX") {
                     let val = readTextFrame(view, dataOffset, frameSize);
                     if (val) tags._raw[frameId] = val;
-                } else if (frameId === "COMM" || frameId === "COM") {
-                    let val = readCommentFrame(view, dataOffset, frameSize);
-                    if (val) tags._raw[frameId] = val;
-                } else if (frameId === "APIC" || frameId === "PIC") {
-                    tags.base64Cover = readPictureFrame(view, dataOffset, frameSize, version);
                 } else if (frameId === "USLT" || frameId === "ULT") {
                     tags.lyrics = readLyricsFrame(view, dataOffset, frameSize);
+                } else if (frameId === "APIC" || frameId === "PIC") {
+                    tags.base64Cover = readPictureFrame(view, dataOffset, frameSize, version);
                 }
             } catch(err) {}
             
@@ -221,13 +205,6 @@ function readTextFrame(view, offset, size) {
     return decodeString(u8, encoding);
 }
 
-function readCommentFrame(view, offset, size) {
-    if (size <= 5) return "";
-    const encoding = view.getUint8(offset);
-    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
-    return decodeString(u8, encoding);
-}
-
 function readLyricsFrame(view, offset, size) {
     if (size <= 5) return "";
     const encoding = view.getUint8(offset);
@@ -235,17 +212,19 @@ function readLyricsFrame(view, offset, size) {
     return decodeString(u8, encoding);
 }
 
-// Mecanismo inteligente anti-caracteres corrompidos (Anti-Bug Chinês)
+// Mecanismo Ultra-Estável de Purificação de Caracteres Ocidentais
 function decodeString(uint8Array, encoding) {
     try {
-        let cleanBytes = uint8Array.filter(b => b !== 0);
+        // Remove bytes estritamente nulos intermediários causados por desalinhamento UTF-16 incorreto
+        let cleanBytes = uint8Array.filter((b, idx) => {
+            if (encoding === 0 && b === 0) return false; // Remove nulos fantasmas do ISO-8859-1
+            return true;
+        });
+
         if (cleanBytes.length === 0) return "";
-        
         let decoded = "";
         
-        // Força decodificação baseada nas flags oficiais da tag ou fallback inteligente se quebrar
         if (encoding === 1 || encoding === 2) {
-            // Se alegar UTF-16 mas não tiver tamanho par ou faltar o cabeçalho BOM, tenta ler como UTF-8/ISO
             if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) {
                 decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
             } else if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF) {
@@ -256,17 +235,19 @@ function decodeString(uint8Array, encoding) {
         } else if (encoding === 3) {
             decoded = new TextDecoder('utf-8').decode(cleanBytes);
         } else {
-            decoded = new TextDecoder('windows-1252').decode(cleanBytes); // Padrão estável para ISO-8859-1 ocidental
-        }
-
-        // Validação preventiva: Se o texto convertido contiver uma sequência incomum de caracteres CJK (Chineses)
-        // resultantes de pareamento de bytes ocidentais corrompidos, força a decodificação direta para texto legível.
-        const cjkRegex = /[\u4e00-\u9fa5]/;
-        if (cjkRegex.test(decoded) && encoding !== 3) {
             decoded = new TextDecoder('windows-1252').decode(cleanBytes);
         }
-        
-        return decoded.trim();
+
+        // Filtro de Segurança Anti-Chinês (Corrige se o interpretador do navegador misturar pares latinos)
+        const cjkRegex = /[\u4e00-\u9fa5\u3040-\u30ff]/;
+        if (cjkRegex.test(decoded)) {
+            // Remove bytes de controle não imprimíveis e tenta ler usando a tabela ASCII/Windows estendida pura
+            const strippedBytes = cleanBytes.filter(b => b >= 32 || b === 10 || b === 13);
+            decoded = new TextDecoder('windows-1252').decode(strippedBytes);
+        }
+
+        // Remove quebras de linha fantasmas e caracteres invisíveis de controle de string no início/fim
+        return decoded.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
     } catch(e) { 
         return ""; 
     }
@@ -342,33 +323,6 @@ function displayMainTags(tags) {
             def.classList.remove("field-hidden");
         }
     }
-}
-
-function renderExtendedList() {
-    const container = document.getElementById("extended-tags-list");
-    const card = document.getElementById("extended-card");
-    if (!container || !card || !dynamicDiscoveredTags._raw) return;
-    
-    container.innerHTML = "";
-    const raw = dynamicDiscoveredTags._raw;
-    const keys = Object.keys(raw);
-
-    if (keys.length === 0) {
-        card.classList.add("field-hidden");
-        return;
-    }
-    card.classList.remove("field-hidden");
-
-    keys.forEach(key => {
-        const valueText = raw[key];
-        if (valueText && valueText.trim() !== "") {
-            const localizedKey = langData[currentLang][key] || key;
-            const item = document.createElement("div");
-            item.className = "extended-item";
-            item.innerHTML = `<span class="extended-key">${localizedKey}</span><span class="extended-val">${valueText}</span>`;
-            container.appendChild(item);
-        }
-    });
 }
 
 updateLanguage(currentLang);
