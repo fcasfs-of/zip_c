@@ -46,7 +46,7 @@ const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
 const btnTheme = document.getElementById("btn-theme");
 
-// Sistema de Gerenciamento do Tema Claro/Escuro
+// Inicialização e gerenciamento do motor de temas
 function initTheme() {
     document.body.classList.remove("light-theme", "dark-theme");
     document.body.classList.add(`${currentTheme}-theme`);
@@ -84,8 +84,10 @@ function updateLanguage(lang) {
     currentLang = lang;
     localStorage.setItem("audioMeta_lang", lang);
     
-    document.getElementById("btn-pt").classList.toggle("active", lang === "pt");
-    document.getElementById("btn-en").classList.toggle("active", lang === "en");
+    const btnPt = document.getElementById("btn-pt");
+    const btnEn = document.getElementById("btn-en");
+    if (btnPt) btnPt.classList.toggle("active", lang === "pt");
+    if (btnEn) btnEn.classList.toggle("active", lang === "en");
     
     if (txtDrop) txtDrop.innerText = langData[lang].drop;
     if (txtMetaTitle) txtMetaTitle.innerText = langData[lang].metaTitle;
@@ -120,16 +122,15 @@ if (dropZone && fileInput) {
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.style.borderColor = "var(--border)";
-        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files);
+        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener("change", (e) => {
-        if (e.target.files && e.target.files.length) handleFile(e.target.files);
+        if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
     });
 }
 
-function handleFile(fileSet) {
-    if (!fileSet || !fileSet) return;
-    const file = fileSet;
+function handleFile(file) {
+    if (!file) return;
     
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -206,7 +207,7 @@ function parseCompleteMP3(buffer) {
     try {
         let syncOffset = 0;
         const maxSearch = Math.min(buffer.byteLength - 4, 64000);
-        const sampleRatesTable =;
+        const sampleRatesTable = [44100, 48000, 32000, 0];
         
         while (syncOffset < maxSearch) {
             if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
@@ -251,18 +252,14 @@ function readLyricsFrame(view, offset, size) {
 
 function decodeString(uint8Array, encoding) {
     try {
-        let cleanBytes = uint8Array.filter((b, idx) => {
-            if (encoding === 0 && b === 0) return false;
-            return true;
-        });
-
+        let cleanBytes = uint8Array.filter((b) => encoding === 0 ? b !== 0 : true);
         if (cleanBytes.length === 0) return "";
         let decoded = "";
         
         if (encoding === 1 || encoding === 2) {
-            if (cleanBytes.length >= 2 && cleanBytes === 0xFF && cleanBytes === 0xFE) {
+            if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) {
                 decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
-            } else if (cleanBytes.length >= 2 && cleanBytes === 0xFE && cleanBytes === 0xFF) {
+            } else if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF) {
                 decoded = new TextDecoder('utf-16be').decode(cleanBytes.subarray(2));
             } else {
                 decoded = new TextDecoder('utf-16').decode(cleanBytes);
