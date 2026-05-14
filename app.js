@@ -1,3 +1,4 @@
+// Dicionário de Idiomas
 const langData = {
     pt: {
         drop: "Arraste seu MP3 aqui ou clique para buscar",
@@ -27,9 +28,10 @@ const langData = {
     }
 };
 
-let currentLang = "pt";
+let currentLang = localStorage.getItem("audioMeta_lang") || "pt";
 let dynamicDiscoveredTags = {};
 
+// Cache de Elementos do DOM
 const txtDrop = document.getElementById("txt-drop");
 const txtMetaTitle = document.getElementById("txt-meta-title");
 const txtExtendedTitle = document.getElementById("txt-extended-title");
@@ -44,26 +46,30 @@ const lblTrack = document.getElementById("lbl-track");
 const lblBitrate = document.getElementById("lbl-bitrate");
 const lblFrequency = document.getElementById("lbl-frequency");
 const lblChannels = document.getElementById("lbl-channels");
+const dropZone = document.getElementById("drop-zone");
+const fileInput = document.getElementById("file-input");
 
 function updateLanguage(lang) {
     currentLang = lang;
+    localStorage.setItem("audioMeta_lang", lang);
+    
     document.getElementById("btn-pt").classList.toggle("active", lang === "pt");
     document.getElementById("btn-en").classList.toggle("active", lang === "en");
     
-    txtDrop.innerText = langData[lang].drop;
-    txtMetaTitle.innerText = langData[lang].metaTitle;
-    txtExtendedTitle.innerText = langData[lang].extendedTitle;
-    if(txtLyricsTitle) txtLyricsTitle.innerText = langData[lang].lyricsTitle;
-    txtTechTitle.innerText = langData[lang].techTitle;
-    lblTitle.innerText = langData[lang].title;
-    lblArtist.innerText = langData[lang].artist;
-    lblAlbum.innerText = langData[lang].album;
-    lblYear.innerText = langData[lang].year;
-    lblGenre.innerText = langData[lang].genre;
-    lblTrack.innerText = langData[lang].track;
-    lblBitrate.innerText = langData[lang].lblBitrate;
-    lblFrequency.innerText = langData[lang].lblFrequency;
-    lblChannels.innerText = langData[lang].lblChannels;
+    if (txtDrop) txtDrop.innerText = langData[lang].drop;
+    if (txtMetaTitle) txtMetaTitle.innerText = langData[lang].metaTitle;
+    if (txtExtendedTitle) txtExtendedTitle.innerText = langData[lang].extendedTitle;
+    if (txtLyricsTitle) txtLyricsTitle.innerText = langData[lang].lyricsTitle;
+    if (txtTechTitle) txtTechTitle.innerText = langData[lang].techTitle;
+    if (lblTitle) lblTitle.innerText = langData[lang].title;
+    if (lblArtist) lblArtist.innerText = langData[lang].artist;
+    if (lblAlbum) lblAlbum.innerText = langData[lang].album;
+    if (lblYear) lblYear.innerText = langData[lang].year;
+    if (lblGenre) lblGenre.innerText = langData[lang].genre;
+    if (lblTrack) lblTrack.innerText = langData[lang].track;
+    if (lblBitrate) lblBitrate.innerText = langData[lang].lblBitrate;
+    if (lblFrequency) lblFrequency.innerText = langData[lang].lblFrequency;
+    if (lblChannels) lblChannels.innerText = langData[lang].lblChannels;
 
     if (typeof window.updatePlayerLanguage === "function") {
         window.updatePlayerLanguage(langData[lang]);
@@ -71,23 +77,24 @@ function updateLanguage(lang) {
     renderExtendedList();
 }
 
+// Eventos de Idioma
 document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
 document.getElementById("btn-en").addEventListener("click", () => updateLanguage("en"));
 
-const dropZone = document.getElementById("drop-zone");
-const fileInput = document.getElementById("file-input");
-
-dropZone.addEventListener("click", () => fileInput.click());
-dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
-dropZone.addEventListener("dragleave", () => dropZone.style.borderColor = "var(--border)");
-dropZone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dropZone.style.borderColor = "var(--border)";
-    if(e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener("change", (e) => {
-    if(e.target.files && e.target.files.length) handleFile(e.target.files[0]);
-});
+// Eventos de Upload
+if (dropZone && fileInput) {
+    dropZone.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
+    dropZone.addEventListener("dragleave", () => dropZone.style.borderColor = "var(--border)");
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = "var(--border)";
+        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
+    });
+}
 
 function handleFile(file) {
     if (!file) return;
@@ -110,7 +117,7 @@ function handleFile(file) {
 
 function parseCompleteMP3(buffer) {
     const view = new DataView(buffer);
-    const tags = { _raw: {}, lyrics: "", technical: { bitrate: "-", frequency: "-", channels: "-" } };
+    const tags = { _raw: {}, lyrics: "", technical: { bitrate: "-", frequency: "-", channels: "-" }, base64Cover: "" };
     
     if (buffer.byteLength < 10) return tags;
 
@@ -151,24 +158,25 @@ function parseCompleteMP3(buffer) {
                     tags.lyrics = readLyricsFrame(view, dataOffset, frameSize);
                 }
             } catch(err) {
-                // Previne falha crítica se um bloco de dados estiver corrompido
+                // Silencia falhas em blocos corrompidos
             }
             
             offset += headerSize + frameSize;
         }
     }
 
-    // Leitura simplificada e estável de frames nativos de áudio
+    // Leitura das propriedades físicas de frames de áudio MPEG
     try {
         let syncOffset = 0;
         const maxSearch = Math.min(buffer.byteLength - 4, 32000);
+        const sampleRatesTable = [44100, 48000, 32000, 0];
+        
         while (syncOffset < maxSearch) {
             if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
                 const byte2 = view.getUint8(syncOffset + 2);
                 const byte3 = view.getUint8(syncOffset + 3);
 
-                const sampleRates = [44100, 48000, 32000, 0];
-                const sampleRate = sampleRates[(byte2 & 0x0C) >> 2];
+                const sampleRate = sampleRatesTable[(byte2 & 0x0C) >> 2];
                 const channels = ((byte3 & 0xC0) >> 6) === 3 ? "Mono" : "Stereo";
 
                 tags.technical.frequency = sampleRate ? `${sampleRate} Hz` : "-";
@@ -244,45 +252,49 @@ function readPictureFrame(view, offset, size, version) {
 }
 
 function displayMainTags(tags) {
-    document.getElementById("meta-container").classList.remove("field-hidden");
+    const metaContainer = document.getElementById("meta-container");
+    if (metaContainer) metaContainer.classList.remove("field-hidden");
+    
     const fallback = langData[currentLang].unknown;
     
-    document.getElementById("val-title").innerText = tags.title || fallback;
-    document.getElementById("val-artist").innerText = tags.artist || fallback;
-    document.getElementById("val-album").innerText = tags.album || fallback;
-    document.getElementById("val-year").innerText = tags.year || fallback;
-    document.getElementById("val-genre").innerText = tags.genre || fallback;
-    document.getElementById("val-track").innerText = tags.track || fallback;
+    if (document.getElementById("val-title")) document.getElementById("val-title").innerText = tags.title || fallback;
+    if (document.getElementById("val-artist")) document.getElementById("val-artist").innerText = tags.artist || fallback;
+    if (document.getElementById("val-album")) document.getElementById("val-album").innerText = tags.album || fallback;
+    if (document.getElementById("val-year")) document.getElementById("val-year").innerText = tags.year || fallback;
+    if (document.getElementById("val-genre")) document.getElementById("val-genre").innerText = tags.genre || fallback;
+    if (document.getElementById("val-track")) document.getElementById("val-track").innerText = tags.track || fallback;
 
-    document.getElementById("val-bitrate").innerText = tags.technical.bitrate || "-";
-    document.getElementById("val-frequency").innerText = tags.technical.frequency || "-";
-    document.getElementById("val-channels").innerText = tags.technical.channels || "-";
+    if (document.getElementById("val-bitrate")) document.getElementById("val-bitrate").innerText = tags.technical.bitrate || "-";
+    if (document.getElementById("val-frequency")) document.getElementById("val-frequency").innerText = tags.technical.frequency || "-";
+    if (document.getElementById("val-channels")) document.getElementById("val-channels").innerText = tags.technical.channels || "-";
 
     const lyricsCard = document.getElementById("lyrics-card");
     const lyricsText = document.getElementById("lyrics-text");
-    if(tags.lyrics) {
+    if(tags.lyrics && lyricsCard && lyricsText) {
         lyricsCard.classList.remove("field-hidden");
         lyricsText.innerText = tags.lyrics;
-    } else {
+    } else if (lyricsCard) {
         lyricsCard.classList.add("field-hidden");
     }
 
     const img = document.getElementById("cover-art");
     const def = document.getElementById("default-cover");
-    if(tags.base64Cover && tags.base64Cover.length > 50) {
-        img.src = tags.base64Cover;
-        img.classList.remove("field-hidden");
-        def.classList.add("field-hidden");
-    } else {
-        img.classList.add("field-hidden");
-        def.classList.remove("field-hidden");
+    if(img && def) {
+        if(tags.base64Cover && tags.base64Cover.length > 50) {
+            img.src = tags.base64Cover;
+            img.classList.remove("field-hidden");
+            def.classList.add("field-hidden");
+        } else {
+            img.classList.add("field-hidden");
+            def.classList.remove("field-hidden");
+        }
     }
 }
 
 function renderExtendedList() {
     const container = document.getElementById("extended-tags-list");
     const card = document.getElementById("extended-card");
-    if (!container || !dynamicDiscoveredTags._raw) return;
+    if (!container || !card || !dynamicDiscoveredTags._raw) return;
     
     container.innerHTML = "";
     const raw = dynamicDiscoveredTags._raw;
@@ -305,4 +317,5 @@ function renderExtendedList() {
     });
 }
 
-updateLanguage("pt");
+// Inicialização com idioma salvo
+updateLanguage(currentLang);
