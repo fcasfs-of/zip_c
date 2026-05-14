@@ -185,7 +185,7 @@
         seekSlider.addEventListener("touchstart", (e) => {
             if (!audio || !audio.src || !audio.duration || isNaN(audio.duration)) return;
             isDraggingSeek = true;
-            processSeekEvent(e.touches[0]);
+            processSeekEvent(e);
         }, { passive: true });
     }
 
@@ -198,7 +198,7 @@
         volumeSlider.addEventListener("touchstart", (e) => {
             if (!audio) return;
             isDraggingVolume = true;
-            processVolumeEvent(e.touches[0]);
+            processVolumeEvent(e);
         }, { passive: true });
     }
 
@@ -208,8 +208,8 @@
         if (isDraggingVolume) processVolumeEvent(e);
     });
     window.addEventListener("touchmove", (e) => {
-        if (isDraggingSeek) processSeekEvent(e.touches[0]);
-        if (isDraggingVolume) processVolumeEvent(e.touches[0]);
+        if (isDraggingSeek) processSeekEvent(e);
+        if (isDraggingVolume) processVolumeEvent(e);
     }, { passive: true });
 
     window.addEventListener("mouseup", () => {
@@ -221,10 +221,13 @@
         isDraggingVolume = false;
     });
 
-    function processSeekEvent(coord) {
+    function processSeekEvent(e) {
         if (!audio || !audio.duration || isNaN(audio.duration) || !seekSlider) return;
         const rect = seekSlider.getBoundingClientRect();
-        let posX = (coord.clientX - rect.left) / rect.width;
+        
+        // Verifica se o evento veio do toque em tela ou do mouse de mesa
+        const clientX = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
+        let posX = (clientX - rect.left) / rect.width;
         posX = Math.max(0, Math.min(1, posX)); 
         
         updateSeekUI(posX * 100);
@@ -232,10 +235,12 @@
         if (timeCurrent) timeCurrent.innerText = formatTime(audio.currentTime);
     }
 
-    function processVolumeEvent(coord) {
+    function processVolumeEvent(e) {
         if (!audio || !volumeSlider) return;
         const rect = volumeSlider.getBoundingClientRect();
-        let posX = (coord.clientX - rect.left) / rect.width;
+        
+        const clientX = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
+        let posX = (clientX - rect.left) / rect.width;
         posX = Math.max(0, Math.min(1, posX));
         
         audio.volume = posX;
