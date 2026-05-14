@@ -3,10 +3,21 @@
     const btnPlay = document.getElementById("btn-play");
     const svgPlay = document.getElementById("svg-play");
     const svgPause = document.getElementById("svg-pause");
-    const progressBar = document.getElementById("progress-bar");
+    const btnRewind = document.getElementById("btn-rewind");
+    const btnForward = document.getElementById("btn-forward");
+    
+    // Elementos da Barra de Busca Customizada
+    const seekSlider = document.getElementById("seek-slider");
+    const seekFill = document.getElementById("seek-fill");
+    const seekThumb = document.getElementById("seek-thumb");
+    
+    // Elementos da Barra de Volume Customizada
+    const volumeSlider = document.getElementById("volume-slider");
+    const volumeFill = document.getElementById("volume-fill");
+    const volumeThumb = document.getElementById("volume-thumb");
+
     const timeCurrent = document.getElementById("time-current");
     const timeTotal = document.getElementById("time-total");
-    const volumeSlider = document.getElementById("volume-slider");
     const btnMute = document.getElementById("btn-mute");
     const pTitle = document.getElementById("player-title");
     const pArtist = document.getElementById("player-artist");
@@ -16,20 +27,22 @@
     let currentTrackTags = null;
     let fallbackText = "Desconhecido";
     let currentFileName = "";
+    
+    // Estados para controle de arrasto do mouse
+    let isDraggingSeek = false;
+    let isDraggingVolume = false;
 
     function loadSavedSettings() {
-        if (!audio || !volumeSlider) return;
-
+        if (!audio) return;
         const savedVolume = localStorage.getItem("audioMeta_volume");
         const savedMute = localStorage.getItem("audioMeta_mute");
 
+        let vol = 0.8;
         if (savedVolume !== null) {
-            audio.volume = parseFloat(savedVolume);
-            volumeSlider.value = savedVolume;
-        } else {
-            audio.volume = 0.8;
-            volumeSlider.value = 0.8;
+            vol = parseFloat(savedVolume);
         }
+        audio.volume = vol;
+        updateVolumeUI(vol);
 
         if (savedMute === "true") {
             audio.muted = true;
@@ -49,7 +62,6 @@
         if (pTitle) pTitle.innerText = tags.title || currentFileName;
         if (pArtist) pArtist.innerText = tags.artist || fallbackText;
         
-        // Renderização imediata da capa no player de áudio inferior
         if (pThumb) {
             if (tags.base64Cover && tags.base64Cover.length > 50) {
                 pThumb.src = tags.base64Cover;
@@ -62,24 +74,17 @@
 
     window.updatePlayerLanguage = function(langStrings) {
         if (!pTitle || !pArtist) return;
-        
         if (!isTrackLoaded) {
             pTitle.innerText = langStrings.playerEmptyTitle;
             pArtist.innerText = langStrings.playerEmptyArtist;
-            if (pThumb) {
-                pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%23888'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
-            }
         } else {
             fallbackText = langStrings.unknown;
-            if (!currentTrackTags || !currentTrackTags.title) {
-                pTitle.innerText = currentFileName;
-            }
-            if (!currentTrackTags || !currentTrackTags.artist) {
-                pArtist.innerText = fallbackText;
-            }
+            if (!currentTrackTags || !currentTrackTags.title) pTitle.innerText = currentFileName;
+            if (!currentTrackTags || !currentTrackTags.artist) pArtist.innerText = fallbackText;
         }
     };
 
+    // Controle de Play/Pause
     if (btnPlay) {
         btnPlay.addEventListener("click", () => {
             if (!audio || !audio.src) return;
@@ -101,41 +106,105 @@
         if (svgPause) svgPause.classList.add("field-hidden");
     }
 
+    // Botões de Avanço e Retrocesso Temporais (10 segundos)
+    if (btnRewind) {
+        btnRewind.addEventListener("click", () => {
+            if (!audio || !audio.src) return;
+            audio.currentTime = Math.max(0, audio.currentTime - 10);
+        });
+    }
+
+    if (btnForward) {
+        btnForward.addEventListener("click", () => {
+            if (!audio || !audio.src || !audio.duration) return;
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+        });
+    }
+
+    // Atualização de Tempo e Progresso NATIVO -> SLIDER CUSTOMIZADO
     if (audio) {
         audio.addEventListener("timeupdate", () => {
-            if (!audio.duration || isNaN(audio.duration)) return;
+            if (!audio.duration || isNaN(audio.duration) || isDraggingSeek) return;
             const pct = (audio.currentTime / audio.duration) * 100;
-            if (progressBar) progressBar.value = pct;
+            updateSeekUI(pct);
             if (timeCurrent) timeCurrent.innerText = formatTime(audio.currentTime);
         });
 
         audio.addEventListener("loadedmetadata", () => {
             if (timeTotal) timeTotal.innerText = formatTime(audio.duration);
+            updateSeekUI(0);
         });
     }
 
-    if (progressBar) {
-        progressBar.addEventListener("input", (e) => {
+    function updateSeekUI(pct) {
+        if (seekFill) seekFill.style.width = pct + "%";
+        if (seekThumb) seekThumb.style.left = pct + "%";
+    }
+
+    function updateVolumeUI(vol) {
+        const pct = vol * 100;
+        if (volumeFill) volumeFill.style.width = pct + "%";
+        if (volumeThumb) volumeThumb.style.left = pct + "%";
+    }
+
+    // LOGICA DE ARRASTO: SEEKBAR CUSTOMIZADA
+    if (seekSlider) {
+        seekSlider.addEventListener("mousedown", (e) => {
             if (!audio || !audio.src || !audio.duration) return;
-            audio.currentTime = (e.target.value / 100) * audio.duration;
+            isDraggingSeek = true;
+            processSeekEvent(e);
         });
     }
 
+    // LOGICA DE ARRASTO: VOLUME CUSTOMIZADO
     if (volumeSlider) {
-        volumeSlider.addEventListener("input", (e) => {
+        volumeSlider.addEventListener("mousedown", (e) => {
             if (!audio) return;
-            const vol = e.target.value;
-            audio.volume = vol;
-            localStorage.setItem("audioMeta_volume", vol);
-            
-            if (audio.muted && vol > 0) {
-                audio.muted = false;
-                localStorage.setItem("audioMeta_mute", "false");
-                if (btnMute) btnMute.style.opacity = "1";
-            }
+            isDraggingVolume = true;
+            processVolumeEvent(e);
         });
     }
 
+    // Eventos globais de movimento e liberação do mouse
+    window.addEventListener("mousemove", (e) => {
+        if (isDraggingSeek) processSeekEvent(e);
+        if (isDraggingVolume) processVolumeEvent(e);
+    });
+
+    window.addEventListener("mouseup", () => {
+        isDraggingSeek = false;
+        isDraggingVolume = false;
+    });
+
+    function processSeekEvent(e) {
+        if (!audio || !audio.duration || !seekSlider) return;
+        const rect = seekSlider.getBoundingClientRect();
+        let posX = (e.clientX - rect.left) / rect.width;
+        posX = Math.max(0, Math.min(1, posX)); // Limita entre 0 e 1
+        
+        updateSeekUI(posX * 100);
+        audio.currentTime = posX * audio.duration;
+        if (timeCurrent) timeCurrent.innerText = formatTime(audio.currentTime);
+    }
+
+    function processVolumeEvent(e) {
+        if (!audio || !volumeSlider) return;
+        const rect = volumeSlider.getBoundingClientRect();
+        let posX = (e.clientX - rect.left) / rect.width;
+        posX = Math.max(0, Math.min(1, posX));
+        
+        audio.volume = posX;
+        updateVolumeUI(posX);
+        localStorage.setItem("audioMeta_volume", posX);
+
+        if (audio.muted && posX > 0) {
+            audio.muted = false;
+            localStorage.setItem("audioMeta_mute", "false");
+            if (btnMute) btnMute.style.opacity = "1";
+        }
+    }
+
+    // Botão de Mute
     if (btnMute) {
         btnMute.addEventListener("click", () => {
             if (!audio) return;
