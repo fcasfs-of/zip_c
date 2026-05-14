@@ -12,15 +12,15 @@
     <header>
         <div class="logo">AudioMeta <span>Pro</span></div>
         <div class="controls-wrapper" style="display: flex; align-items: center; gap: 1rem;">
-            <!-- Botão Alternador de Temas Claro/Escuro -->
-            <button id="btn-theme" class="theme-toggle-btn" title="Alternar Tema" style="background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-                <!-- Ícone do Sol (Visível no Modo Dark) -->
+            <!-- Botão Alternador de Temas Claro/Escuro Moderno -->
+            <button id="btn-theme" class="theme-toggle-btn" title="Alternar Tema" style="background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; transition: all 0.2s;">
+                <!-- Ícone do Sol (Estilo Outline - Visível no Modo Dark) -->
                 <svg id="svg-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                <!-- Ícone da Lua (Visível no Modo Light) -->
+                <!-- Ícone da Lua (Estilo Outline - Visível no Modo Light) -->
                 <svg id="svg-moon" class="field-hidden" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
             </button>
 
-            <!-- Alternador de Idiomas -->
+            <!-- Alternador de Idiomas Minimalista -->
             <div class="lang-selector">
                 <button id="btn-pt" class="active">PT</button>
                 <button id="btn-en">EN</button>
@@ -31,7 +31,7 @@
     <main class="container">
         <!-- Zona Profissional de Upload e Drop de Arquivos -->
         <section class="drop-zone" id="drop-zone">
-            <svg viewBox="0 0 24 24" width="48" height="48"><path fill="currentColor" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <p id="txt-drop">Arraste seu MP3 aqui ou clique para buscar</p>
             <input type="file" id="file-input" accept="audio/mp3, audio/mpeg" hidden>
         </section>
@@ -41,7 +41,8 @@
             <div class="meta-card">
                 <div class="cover-wrapper">
                     <div class="no-cover" id="default-cover">
-                        <svg viewBox="0 0 24 24" width="64" height="64"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14H11V12H13V16ZM13 10H11V8H13V10Z"/></svg>
+                        <!-- Ícone de Música Geométrico Minimalista -->
+                        <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                     </div>
                     <img id="cover-art" alt="Cover Art" class="field-hidden">
                 </div>
@@ -76,32 +77,48 @@
         </section>
     </main>
 
-    <!-- Componente Fixo Inferior do Player de Áudio Dark/Light Customizado -->
+    <!-- Componente Fixo Inferior do Player de Áudio Dark/Light Premium Customizado -->
     <div class="audio-player" id="audio-player">
         <audio id="main-audio"></audio>
         <div class="player-grid">
             
             <!-- Zona Esquerda: Capa de Álbum Miniatura e Rótulos Sincronizados -->
             <div class="player-track-info">
-                <img id="player-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%2364748b'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>" alt="">
+                <img id="player-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><circle cx='12' cy='12' r='3'></circle></svg>" alt="">
                 <div>
                     <div class="player-title" id="player-title">Nenhuma música</div>
                     <div class="player-artist" id="player-artist">Aguardando arquivo</div>
                 </div>
             </div>
             
-            <!-- Zona Central: Controles de Pulo e Linha de Progresso Baseada em Camadas -->
+            <!-- Zona Central: Controles de Pulo Temporal com Ícones de Traço Fino e Linha de Tempo -->
             <div class="player-controls">
                 <div class="control-buttons">
+                    <!-- Botão Retroceder 10 segundos Moderno -->
                     <button id="btn-rewind" title="Voltar 10s">
-                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.5 3C17.15 3 21 6.85 21 11.5S17.15 20 12.5 20 4 16.15 4 11.5h2c0 3.58 2.92 6.5 6.5 6.5s6.5-2.92 6.5-6.5-2.92-6.5-6.5-6.5c-2.22 0-4.17 1.11-5.35 2.8L10 6H4v6h6L7.54 9.54C9 7.61 10.61 5 12.5 3zm-2.3 11.8V11h-.8v-.7h1.7v4.5h-.9zm3.1-.1c-.6 0-1-.4-1-1.1v-1.6c0-.7.4-1.1 1-1.1s1 .4 1 1.1v1.6c0 .7-.4 1.1-1 1.1zm0-.7c.2 0 .3-.2.3-.5v-1.6c0-.3-.1-.5-.3-.5s-.3.2-.3.5v-1.6c0 .3.1.5.3.5z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                            <text x="12" y="15" font-size="7" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+                        </svg>
                     </button>
+                    <!-- Botão Central Play/Pause Redondo Estilo Outline -->
                     <button id="btn-play" class="play-main">
-                        <svg id="svg-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-                        <svg id="svg-pause" class="field-hidden" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        <svg id="svg-play" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <svg id="svg-pause" class="field-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="10" y1="4" x2="10" y2="20"></line>
+                            <line x1="14" y1="4" x2="14" y2="20"></line>
+                        </svg>
                     </button>
+                    <!-- Botão Avançar 10 segundos Moderno -->
                     <button id="btn-forward" title="Avançar 10s">
-                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11.5 3C6.85 3 3 6.85 3 11.5S6.85 20 11.5 20s8.5-3.85 8.5-8.5h-2c0 3.58-2.92 6.5-6.5 6.5s-6.5-2.92-6.5-6.5 2.92-6.5 6.5-6.5c2.22 0 4.17 1.11 5.35 2.8L14 12h6V6h-2.46l2.46 2.54C18.5 6.61 15.39 3 11.5 3zm-2.3 11.8V11h-.8v-.7h1.7v4.5h-.9zm3.1-.1c-.6 0-1-.4-1-1.1v-1.6c0-.7.4-1.1 1-1.1s1 .4 1 1.1v1.6c0 .7-.4 1.1-1 1.1zm0-.7c.2 0 .3-.2.3-.5v-1.6c0-.3-.1-.5-.3-.5s-.3.2-.3.5v-1.6c0 .3.1.5.3.5z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                            <path d="M21 3v5h-5"/>
+                            <text x="12" y="15" font-size="7" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">10</text>
+                        </svg>
                     </button>
                 </div>
                 <div class="progress-container">
@@ -115,10 +132,13 @@
                 </div>
             </div>
             
-            <!-- Zona Direita: Controle e Slider de Volume Customizado -->
+            <!-- Zona Equilibrada Direita: Ícone de Som Moderno e Volume Customizado -->
             <div class="volume-container">
                 <button id="btn-mute">
-                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
                 </button>
                 <div class="custom-slider volume-slider-width" id="volume-slider">
                     <div class="slider-track"></div>
@@ -130,7 +150,7 @@
         </div>
     </div>
 
-    <!-- Scripts Separados de Camadas Isoladas -->
+    <!-- Scripts Separados e Organizados -->
     <script src="app.js"></script>
     <script src="player.js"></script>
 </body>
