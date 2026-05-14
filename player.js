@@ -17,6 +17,7 @@
     let fallbackText = "Desconhecido";
 
     window.initPlayer = function(file, tags, unknownFallback) {
+        if(!file) return;
         audio.src = URL.createObjectURL(file);
         isTrackLoaded = true;
         currentTrackTags = tags;
@@ -25,7 +26,7 @@
         pTitle.innerText = tags.title || file.name;
         pArtist.innerText = tags.artist || fallbackText;
         
-        if(tags.base64Cover && tags.base64Cover.length > 30) {
+        if(tags.base64Cover && tags.base64Cover.length > 50) {
             pThumb.src = tags.base64Cover;
         } else {
             pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%23888'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
@@ -39,7 +40,7 @@
             pArtist.innerText = langStrings.playerEmptyArtist;
         } else {
             fallbackText = langStrings.unknown;
-            if (!currentTrackTags.artist) {
+            if (!currentTrackTags || !currentTrackTags.artist) {
                 pArtist.innerText = fallbackText;
             }
         }
@@ -51,7 +52,7 @@
     });
 
     function playAudio() {
-        audio.play().catch(e => console.log("Aguardando interação do usuário para reproduzir."));
+        audio.play().catch(() => {});
         svgPlay.classList.add("field-hidden");
         svgPause.classList.remove("field-hidden");
     }
@@ -63,7 +64,7 @@
     }
 
     audio.addEventListener("timeupdate", () => {
-        if(isNaN(audio.duration)) return;
+        if(!audio.duration || isNaN(audio.duration)) return;
         const pct = (audio.currentTime / audio.duration) * 100;
         progressBar.value = pct;
         timeCurrent.innerText = formatTime(audio.currentTime);
@@ -74,9 +75,8 @@
     });
 
     progressBar.addEventListener("input", (e) => {
-        if (!audio.src) return;
-        const seekTime = (e.target.value / 100) * audio.duration;
-        audio.currentTime = seekTime;
+        if (!audio.src || !audio.duration) return;
+        audio.currentTime = (e.target.value / 100) * audio.duration;
     });
 
     volumeSlider.addEventListener("input", (e) => {
@@ -89,6 +89,7 @@
     });
 
     function formatTime(secs) {
+        if(isNaN(secs)) return "0:00";
         const m = Math.floor(secs / 60);
         const s = Math.floor(secs % 60);
         return `${m}:${s < 10 ? '0' : ''}${s}`;
