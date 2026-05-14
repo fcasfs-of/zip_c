@@ -6,7 +6,6 @@
     const btnRewind = document.getElementById("btn-rewind");
     const btnForward = document.getElementById("btn-forward");
     
-    // Controles Deslizantes Customizados (Divs)
     const seekSlider = document.getElementById("seek-slider");
     const seekFill = document.getElementById("seek-fill");
     const seekThumb = document.getElementById("seek-thumb");
@@ -28,7 +27,9 @@
     let isDraggingSeek = false;
     let isDraggingVolume = false;
 
-    // Recupera e aplica as configurações persistidas de áudio
+    // String SVG minimalista e profissional estruturada em Outline para o Fallback sem capa
+    const audioFallbackSvg = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18V5l12-2v13'></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>";
+
     function loadSavedSettings() {
         if (!audio) return;
         const savedVolume = localStorage.getItem("audioMeta_volume");
@@ -45,7 +46,6 @@
         }
     }
 
-    // Inicialização da Faixa carregada através do app.js
     window.initPlayer = function(file, tags, unknownFallback) {
         if (!file || !audio) return;
         
@@ -58,25 +58,24 @@
         if (pTitle) pTitle.innerText = tags.title || currentFileName;
         if (pArtist) pArtist.innerText = tags.artist || fallbackText;
         
-        // Sincroniza a exibição da capa extraída diretamente na miniatura do player inferior
         if (pThumb) {
             if (tags.base64Cover && tags.base64Cover.length > 50) {
                 pThumb.src = tags.base64Cover;
             } else {
-                pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%2364748b'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
+                // Injeta o novo ícone moderno de áudio como fallback direto na miniatura do player
+                pThumb.src = audioFallbackSvg;
             }
         }
         playAudio();
     };
 
-    // Callback dinâmico chamado pelo app.js ao alternar idiomas
     window.updatePlayerLanguage = function(langStrings) {
         if (!pTitle || !pArtist) return;
         if (!isTrackLoaded) {
             pTitle.innerText = langStrings.playerEmptyTitle;
             pArtist.innerText = langStrings.playerEmptyArtist;
             if (pThumb) {
-                pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='%2364748b'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
+                pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><circle cx='12' cy='12' r='3'></circle></svg>";
             }
         } else {
             fallbackText = langStrings.unknown;
@@ -85,7 +84,6 @@
         }
     };
 
-    // Controles Básicos de Hardware
     if (btnPlay) {
         btnPlay.addEventListener("click", () => {
             if (!audio || !audio.src) return;
@@ -107,7 +105,6 @@
         if (svgPause) svgPause.classList.add("field-hidden");
     }
 
-    // Botões de Avanço e Retrocesso Temporais (±10 segundos)
     if (btnRewind) {
         btnRewind.addEventListener("click", () => {
             if (!audio || !audio.src) return;
@@ -122,7 +119,6 @@
         });
     }
 
-    // Atualização de Progresso NATIVO -> SLIDERS CUSTOMIZADOS
     if (audio) {
         audio.addEventListener("timeupdate", () => {
             if (!audio.duration || isNaN(audio.duration) || isDraggingSeek) return;
@@ -148,7 +144,6 @@
         if (volumeThumb) volumeThumb.style.left = pct + "%";
     }
 
-    // Gerenciamento de Cliques / Movimentos para a Seekbar Customizada
     if (seekSlider) {
         seekSlider.addEventListener("mousedown", (e) => {
             if (!audio || !audio.src || !audio.duration) return;
@@ -157,7 +152,6 @@
         });
     }
 
-    // Gerenciamento de Cliques / Movimentos para o Controle de Volume
     if (volumeSlider) {
         volumeSlider.addEventListener("mousedown", (e) => {
             if (!audio) return;
@@ -166,7 +160,6 @@
         });
     }
 
-    // Captura global de mouse para arrastos fora do elemento bounding box
     window.addEventListener("mousemove", (e) => {
         if (isDraggingSeek) processSeekEvent(e);
         if (isDraggingVolume) processVolumeEvent(e);
@@ -205,7 +198,6 @@
         }
     }
 
-    // Gerenciador de Silenciamento (Mute)
     if (btnMute) {
         btnMute.addEventListener("click", () => {
             if (!audio) return;
