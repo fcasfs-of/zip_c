@@ -1,4 +1,3 @@
-// Dicionário de Idiomas
 const langData = {
     pt: {
         drop: "Arraste seu MP3 aqui ou clique para buscar",
@@ -31,7 +30,6 @@ const langData = {
 let currentLang = localStorage.getItem("audioMeta_lang") || "pt";
 let dynamicDiscoveredTags = {};
 
-// Cache de Elementos do DOM
 const txtDrop = document.getElementById("txt-drop");
 const txtMetaTitle = document.getElementById("txt-meta-title");
 const txtExtendedTitle = document.getElementById("txt-extended-title");
@@ -77,11 +75,9 @@ function updateLanguage(lang) {
     renderExtendedList();
 }
 
-// Eventos de Idioma
-document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
-document.getElementById("btn-en").addEventListener("click", () => updateLanguage("en"));
+if (document.getElementById("btn-pt")) document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
+if (document.getElementById("btn-en")) document.getElementById("btn-en").addEventListener("click", () => updateLanguage("en"));
 
-// Eventos de Upload
 if (dropZone && fileInput) {
     dropZone.addEventListener("click", () => fileInput.click());
     dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
@@ -124,8 +120,14 @@ function parseCompleteMP3(buffer) {
     if (view.getUint8(0) === 0x49 && view.getUint8(1) === 0x44 && view.getUint8(2) === 0x33) {
         const version = view.getUint8(3);
         let offset = 10;
-        const totalSize = ((view.getUint8(6) & 0x7F) << 21) | ((view.getUint8(7) & 0x7F) << 14) | ((view.getUint8(8) & 0x7F) << 7) | (view.getUint8(9) & 0x7F);
-        const limit = Math.min(totalSize, buffer.byteLength);
+        
+        // Tamanho total do cabeçalho ID3v2 codificado em Synchsafe de 28 bits
+        const totalSize = ((view.getUint8(6) & 0x7F) << 21) | 
+                          ((view.getUint8(7) & 0x7F) << 14) | 
+                          ((view.getUint8(8) & 0x7F) << 7)  | 
+                          (view.getUint8(9) & 0x7F);
+                          
+        const limit = Math.min(totalSize + 10, buffer.byteLength);
 
         while (offset < limit - 10) {
             let frameId = "";
@@ -136,17 +138,25 @@ function parseCompleteMP3(buffer) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2));
                 frameSize = (view.getUint8(offset+3) << 16) | (view.getUint8(offset+4) << 8) | view.getUint8(offset+5);
                 headerSize = 6;
-            } else {
+            } else if (version === 3) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2), view.getUint8(offset+3));
                 frameSize = (view.getUint8(offset+4) << 24) | (view.getUint8(offset+5) << 16) | (view.getUint8(offset+6) << 8) | view.getUint8(offset+7);
+            } else if (version === 4) {
+                frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2), view.getUint8(offset+3));
+                frameSize = ((view.getUint8(offset+4) & 0x7F) << 21) | 
+                            ((view.getUint8(offset+5) & 0x7F) << 14) | 
+                            ((view.getUint8(offset+6) & 0x7F) << 7)  | 
+                            (view.getUint8(offset+7) & 0x7F);
             }
 
-            if (!frameId || frameId.charCodeAt(0) === 0 || frameSize <= 0 || (offset + headerSize + frameSize) > limit) break;
+            if (!frameId || frameId.charCodeAt(0) === 0 || frameSize <= 0 || (offset + headerSize + frameSize) > limit) {
+                break;
+            }
             
             let dataOffset = offset + headerSize;
 
             try {
-                if (frameId.startsWith("T") && frameId !== "TXXX") {
+                if (frameId.startsWith("T") && frameId !== "TXXX" && frameId !== "TXX") {
                     let val = readTextFrame(view, dataOffset, frameSize);
                     if (val) tags._raw[frameId] = val;
                 } else if (frameId === "COMM" || frameId === "COM") {
@@ -158,17 +168,17 @@ function parseCompleteMP3(buffer) {
                     tags.lyrics = readLyricsFrame(view, dataOffset, frameSize);
                 }
             } catch(err) {
-                // Silencia falhas em blocos corrompidos
+                // Silencia frames corrompidos individuais para não travar a leitura
             }
             
             offset += headerSize + frameSize;
         }
     }
 
-    // Leitura das propriedades físicas de frames de áudio MPEG
+    // Leitura técnica estável dos frames de áudio MPEG
     try {
         let syncOffset = 0;
-        const maxSearch = Math.min(buffer.byteLength - 4, 32000);
+        const maxSearch = Math.min(buffer.byteLength - 4, 64000);
         const sampleRatesTable = [44100, 48000, 32000, 0];
         
         while (syncOffset < maxSearch) {
@@ -200,22 +210,37 @@ function parseCompleteMP3(buffer) {
 
 function readTextFrame(view, offset, size) {
     if (size <= 1) return "";
-    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1), view.getUint8(offset));
+    const encoding = view.getUint8(offset);
+    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1);
+    return decodeString(u8, encoding);
 }
 
 function readCommentFrame(view, offset, size) {
     if (size <= 5) return "";
-    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5), view.getUint8(offset));
+    const encoding = view.getUint8(offset);
+    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
+    return decodeString(u8, encoding);
 }
 
 function readLyricsFrame(view, offset, size) {
     if (size <= 5) return "";
-    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5), view.getUint8(offset));
+    const encoding = view.getUint8(offset);
+    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
+    return decodeString(u8, encoding);
 }
 
 function decodeString(uint8Array, encoding) {
     try {
-        const cleanBytes = uint8Array.filter(b => b !== 0);
+        let cleanBytes = uint8Array.filter(b => b !== 0);
+        if (cleanBytes.length === 0) return "";
+        
+        // Remove marcações de ordem de byte (BOM) UTF-16 comuns se presentes
+        if ((encoding === 1 || encoding === 2) && cleanBytes.length >= 2) {
+            if ((cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) || (cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF)) {
+                cleanBytes = cleanBytes.subarray(2);
+            }
+        }
+        
         if (encoding === 1 || encoding === 2) return new TextDecoder('utf-16').decode(cleanBytes);
         return new TextDecoder('utf-8').decode(cleanBytes);
     } catch(e) { return ""; }
@@ -235,18 +260,24 @@ function readPictureFrame(view, offset, size, version) {
                 mimeChars.push(String.fromCharCode(view.getUint8(current)));
                 current++;
             }
-            if(mimeChars.length) mimeType = mimeChars.join("");
-            current += 2;
+            if (mimeChars.length) mimeType = mimeChars.join("");
+            current += 2; // Pula o delimitador nulo e o tipo de figura (1 byte)
         }
 
-        while (view.getUint8(current) !== 0 && current < end) current++;
-        current++;
+        // Pula a descrição textual da imagem se ela existir
+        while (view.getUint8(current) !== 0 && current < end) {
+            current++;
+        }
+        current++; // Pula o byte nulo finalizador da descrição
 
-        if(current >= end) return "";
+        if (current >= end) return "";
+        
         const imgBytes = new Uint8Array(view.buffer, view.byteOffset + current, end - current);
         let binary = '';
         const len = imgBytes.byteLength;
-        for (let i = 0; i < len; i++) binary += String.fromCharCode(imgBytes[i]);
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(imgBytes[i]);
+        }
         return `data:${mimeType};base64,${btoa(binary)}`;
     } catch(e) { return ""; }
 }
@@ -270,7 +301,7 @@ function displayMainTags(tags) {
 
     const lyricsCard = document.getElementById("lyrics-card");
     const lyricsText = document.getElementById("lyrics-text");
-    if(tags.lyrics && lyricsCard && lyricsText) {
+    if (tags.lyrics && lyricsCard && lyricsText) {
         lyricsCard.classList.remove("field-hidden");
         lyricsText.innerText = tags.lyrics;
     } else if (lyricsCard) {
@@ -279,12 +310,13 @@ function displayMainTags(tags) {
 
     const img = document.getElementById("cover-art");
     const def = document.getElementById("default-cover");
-    if(img && def) {
-        if(tags.base64Cover && tags.base64Cover.length > 50) {
+    if (img && def) {
+        if (tags.base64Cover && tags.base64Cover.length > 50) {
             img.src = tags.base64Cover;
             img.classList.remove("field-hidden");
             def.classList.add("field-hidden");
         } else {
+            img.src = "";
             img.classList.add("field-hidden");
             def.classList.remove("field-hidden");
         }
@@ -308,7 +340,7 @@ function renderExtendedList() {
 
     keys.forEach(key => {
         const valueText = raw[key];
-        if(valueText && valueText.trim() !== "") {
+        if (valueText && valueText.trim() !== "") {
             const item = document.createElement("div");
             item.className = "extended-item";
             item.innerHTML = `<span class="extended-key">${key}</span><span class="extended-val">${valueText}</span>`;
@@ -317,5 +349,4 @@ function renderExtendedList() {
     });
 }
 
-// Inicialização com idioma salvo
 updateLanguage(currentLang);
