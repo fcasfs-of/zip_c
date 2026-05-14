@@ -1,17 +1,21 @@
-/* Container Fixo Inferior do Player */
 .audio-player {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background: #090d16; /* Fundo escuro profundo com leve matiz azulado */
-    border-top: 1px solid #1e293b; /* Borda sutil para separação de profundidade */
+    background: #090d16;
+    border-top: 1px solid #1e293b;
     padding: 1.25rem 2rem;
     z-index: 1000;
-    box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.6); /* Sombra difusa superior */
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
-/* Grade de Alinhamento das Três Zonas */
+body.light-theme .audio-player {
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
 .player-grid {
     max-width: 1200px;
     margin: 0 auto;
@@ -21,12 +25,11 @@
     gap: 2rem;
 }
 
-/* Zona Esquerda: Informações da Faixa */
 .player-track-info {
     display: flex;
     align-items: center;
     gap: 1rem;
-    min-width: 0; /* Previne quebra de layout por overflow de texto */
+    min-width: 0;
 }
 
 .player-track-info img {
@@ -34,15 +37,14 @@
     height: 52px;
     border-radius: 8px;
     object-fit: cover;
-    background: #1e293b;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    background: var(--bg-input);
+    border: 1px solid var(--border);
 }
 
 .player-title {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #f8fafc; /* Branco de alta intensidade */
+    color: var(--text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -52,14 +54,13 @@
 
 .player-artist {
     font-size: 0.75rem;
-    color: #94a3b8; /* Cinza claro fosco */
+    color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 220px;
 }
 
-/* Zona Central: Controles e Linha de Tempo */
 .player-controls {
     display: flex;
     flex-direction: column;
@@ -77,35 +78,31 @@
 .control-buttons button {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--text-muted);
     cursor: pointer;
     width: 26px;
     height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color 0.2s;
 }
 
 .control-buttons button:hover {
-    color: #f8fafc; /* Brilho ao passar o mouse */
+    color: var(--text-main);
 }
 
-/* Botão Central de Play/Pause */
 .control-buttons button.play-main {
-    background: #f8fafc;
-    color: #020617; /* Contraste invertido em modo escuro */
+    background: var(--text-main);
+    color: var(--bg-main);
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    box-shadow: 0 4px 14px rgba(248, 250, 252, 0.2);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s;
 }
 
 .control-buttons button.play-main:hover {
     transform: scale(1.05);
-    background: #ffffff;
-    box-shadow: 0 4px 20px rgba(248, 250, 252, 0.4);
 }
 
 .control-buttons button.play-main svg {
@@ -113,21 +110,20 @@
     height: 22px;
 }
 
-/* Sistema Remodelado da Linha de Progresso Customizada */
 .progress-container {
     width: 100%;
     display: flex;
     align-items: center;
     gap: 1rem;
     font-size: 0.75rem;
-    font-family: monospace; /* Garante tamanho de caracteres fixo para cronômetros */
-    color: #64748b; /* Cinza silenciado */
+    font-family: monospace;
+    color: var(--text-muted);
 }
 
 .custom-slider {
     position: relative;
     flex-grow: 1;
-    height: 20px; /* Área expandida invisível para detecção facilitada de cliques */
+    height: 20px;
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -138,7 +134,7 @@
     position: absolute;
     width: 100%;
     height: 4px;
-    background: #1e293b; /* Canaleta escura fosca */
+    background: var(--border);
     border-radius: 9999px;
     pointer-events: none;
 }
@@ -147,35 +143,32 @@
     position: absolute;
     left: 0;
     height: 4px;
-    background: #3b82f6; /* Azul neon moderno para preenchimento */
+    background: var(--accent);
     border-radius: 9999px;
     width: 0%;
     pointer-events: none;
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
 }
 
 .slider-thumb {
     position: absolute;
     width: 12px;
     height: 12px;
-    background: #f8fafc;
-    border: 2px solid #3b82f6;
+    background: var(--text-main);
+    border: 2px solid var(--accent);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     top: 50%;
     left: 0%;
     pointer-events: none;
-    opacity: 0; /* Oculto por padrão para visual limpo */
+    opacity: 0;
     transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-/* Exibe e destaca o botão deslizante ao aproximar o mouse */
 .custom-slider:hover .slider-thumb {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1.1);
 }
 
-/* Zona Direita: Gerenciamento de Volume */
 .volume-container {
     display: flex;
     align-items: center;
@@ -190,7 +183,7 @@
 .volume-container button {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--text-muted);
     width: 22px;
     height: 22px;
     cursor: pointer;
@@ -201,39 +194,12 @@
 }
 
 .volume-container button:hover {
-    color: #f8fafc;
+    color: var(--text-main);
 }
 
-/* Modificadores Úteis */
-.field-hidden {
-    display: none !important;
-}
-
-/* Layout Responsivo para Dispositivos Móveis */
 @media (max-width: 768px) {
-    .audio-player {
-        padding: 1rem;
-    }
-    
-    .player-grid {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-    
-    .volume-container {
-        display: none; /* Oculta a barra de volume em telas pequenas */
-    }
-    
-    .player-track-info {
-        justify-content: center;
-        text-align: center;
-    }
-    
-    .player-title, .player-artist {
-        max-width: 100%;
-    }
-    
-    .progress-container {
-        gap: 0.5rem;
-    }
+    .player-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .volume-container { display: none; }
+    .player-track-info { justify-content: center; }
+    .player-title, .player-artist { max-width: 100%; }
 }
