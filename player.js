@@ -225,7 +225,7 @@
         if (!audio || !audio.duration || isNaN(audio.duration) || !seekSlider) return;
         const rect = seekSlider.getBoundingClientRect();
         
-        // Verifica se o evento veio do toque em tela ou do mouse de mesa
+        // CORREÇÃO: Captura o índice [0] do array de toques ativos se for um dispositivo móvel
         const clientX = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
         let posX = (clientX - rect.left) / rect.width;
         posX = Math.max(0, Math.min(1, posX)); 
@@ -239,6 +239,7 @@
         if (!audio || !volumeSlider) return;
         const rect = volumeSlider.getBoundingClientRect();
         
+        // CORREÇÃO: Captura o índice [0] do array de toques ativos se for um dispositivo móvel
         const clientX = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
         let posX = (clientX - rect.left) / rect.width;
         posX = Math.max(0, Math.min(1, posX));
