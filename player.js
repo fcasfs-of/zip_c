@@ -12,16 +12,40 @@
     const pArtist = document.getElementById("player-artist");
     const pThumb = document.getElementById("player-thumb");
 
-    window.initPlayer = function(file, tags) {
+    let isTrackLoaded = false;
+    let currentTrackTags = null;
+    let fallbackText = "Desconhecido";
+
+    // Inicializa o player com o arquivo de áudio carregado
+    window.initPlayer = function(file, tags, unknownFallback) {
         audio.src = URL.createObjectURL(file);
+        isTrackLoaded = true;
+        currentTrackTags = tags;
+        fallbackText = unknownFallback;
+
         pTitle.innerText = tags.title || file.name;
-        pArtist.innerText = tags.artist || "...";
+        pArtist.innerText = tags.artist || fallbackText;
+        
         if(tags.base64Cover && tags.base64Cover.length > 30) {
             pThumb.src = tags.base64Cover;
         } else {
             pThumb.src = "data:image/svg+xml;utf8,<svg xmlns='w3.org' viewBox='0 0 24 24' fill='%23888'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/></svg>";
         }
         playAudio();
+    };
+
+    // Função global chamada pelo app.js ao alternar idiomas
+    window.updatePlayerLanguage = function(langStrings) {
+        if (!isTrackLoaded) {
+            pTitle.innerText = langStrings.playerEmptyTitle;
+            pArtist.innerText = langStrings.playerEmptyArtist;
+        } else {
+            fallbackText = langStrings.unknown;
+            // Se o artista atual inserido for o rótulo antigo de desconhecido, atualiza-o
+            if (!currentTrackTags.artist) {
+                pArtist.innerText = fallbackText;
+            }
+        }
     };
 
     btnPlay.addEventListener("click", () => {
