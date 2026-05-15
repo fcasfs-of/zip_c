@@ -1,6 +1,7 @@
 const langData = {
     pt: {
         drop: "Arraste seu MP3 aqui ou clique para buscar",
+        urlLabel: "Ou insira o link web do áudio MP3",
         metaTitle: "Metadados Extraídos",
         title: "Título", artist: "Artista", album: "Álbum",
         year: "Ano", genre: "Gênero", track: "Faixa",
@@ -13,6 +14,7 @@ const langData = {
     },
     en: {
         drop: "Drag your MP3 here or click to browse",
+        urlLabel: "Or insert the web link of the MP3 audio",
         metaTitle: "Extracted Metadata",
         title: "Title", artist: "Artist", album: "Album",
         year: "Year", genre: "Genre", track: "Track",
@@ -25,13 +27,14 @@ const langData = {
     }
 };
 
+// Escopo global compartilhado com downloader.js e player.js
 window.currentLang = localStorage.getItem("audioMeta_lang") || "pt";
 window.dynamicDiscoveredTags = {};
 
 let currentTheme = localStorage.getItem("audioMeta_theme") || "dark";
 
-// DOM elements
 const txtDrop = document.getElementById("txt-drop");
+const txtUrlLabel = document.getElementById("txt-url-label");
 const txtMetaTitle = document.getElementById("txt-meta-title");
 const txtLyricsTitle = document.getElementById("txt-lyrics-title");
 const txtTechTitle = document.getElementById("txt-tech-title");
@@ -48,8 +51,6 @@ const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
 const btnTheme = document.getElementById("btn-theme");
 const txtBtnDownload = document.getElementById("txt-btn-download");
-
-// URL inputs
 const urlInput = document.getElementById("url-input");
 const btnLoadUrl = document.getElementById("btn-load-url");
 
@@ -82,7 +83,9 @@ function updateThemeButtonIcon() {
     }
 }
 
-if (btnTheme) btnTheme.addEventListener("click", toggleTheme);
+if (btnTheme) {
+    btnTheme.addEventListener("click", toggleTheme);
+}
 
 function updateLanguage(lang) {
     window.currentLang = lang;
@@ -94,6 +97,7 @@ function updateLanguage(lang) {
     if (btnEn) btnEn.classList.toggle("active", lang === "en");
     
     if (txtDrop) txtDrop.innerText = langData[lang].drop;
+    if (txtUrlLabel) txtUrlLabel.innerText = langData[lang].urlLabel;
     if (txtMetaTitle) txtMetaTitle.innerText = langData[lang].metaTitle;
     if (txtLyricsTitle) txtLyricsTitle.innerText = langData[lang].lyricsTitle;
     if (txtTechTitle) txtTechTitle.innerText = langData[lang].techTitle;
@@ -120,7 +124,7 @@ function updateLanguage(lang) {
 if (document.getElementById("btn-pt")) document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
 if (document.getElementById("btn-en")) document.getElementById("btn-en").addEventListener("click", () => updateLanguage("en"));
 
-// Entrada de Arquivo Local
+// Entrada de mídia: Local File Upload / Drag over
 if (dropZone && fileInput) {
     dropZone.addEventListener("click", () => fileInput.click());
     dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
@@ -137,6 +141,7 @@ if (dropZone && fileInput) {
 
 function handleFile(file) {
     if (!file) return;
+    
     const reader = new FileReader();
     reader.onload = function(e) {
         const buffer = e.target.result;
@@ -151,27 +156,24 @@ function handleFile(file) {
     reader.readAsArrayBuffer(file);
 }
 
-// Entrada de Link Web (URL)
+// Entrada de mídia: Web URL Stream
 if (btnLoadUrl && urlInput) {
     btnLoadUrl.addEventListener("click", () => {
         const url = urlInput.value.trim();
-        if (!url) return;
-        handleUrl(url);
+        if (url) handleUrl(url);
     });
     urlInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
             const url = urlInput.value.trim();
-            if (!url) return;
-            handleUrl(url);
+            if (url) handleUrl(url);
         }
     });
 }
 
 function handleUrl(url) {
-    // Requisição via Fetch para obter o buffer binário do áudio via web
     fetch(url)
         .then(response => {
-            if (!response.ok) throw new Error("Erro de rede");
+            if (!response.ok) throw new Error("Erro de rede ao baixar stream");
             return response.arrayBuffer();
         })
         .then(buffer => {
@@ -184,7 +186,7 @@ function handleUrl(url) {
             }
         })
         .catch(err => {
-            console.error("Falha ao carregar áudio via URL. Certifique-se de que o link aceita requisições CORS.", err);
+            console.error("Falha ao carregar áudio remoto via link externo. Erro de CORS ou URL inválida.", err);
         });
 }
 
@@ -197,11 +199,19 @@ function parseCompleteMP3(buffer) {
     if (view.getUint8(0) === 0x49 && view.getUint8(1) === 0x44 && view.getUint8(2) === 0x33) {
         const version = view.getUint8(3);
         let offset = 10;
-        const totalSize = ((view.getUint8(6) & 0x7F) << 21) | ((view.getUint8(7) & 0x7F) << 14) | ((view.getUint8(8) & 0x7F) << 7) | (view.getUint8(9) & 0x7F);
+        
+        const totalSize = ((view.getUint8(6) & 0x7F) << 21) | 
+                          ((view.getUint8(7) & 0x7F) << 14) | 
+                          ((view.getUint8(8) & 0x7F) << 7)  | 
+                          (view.getUint8(9) & 0x7F);
+                          
         const limit = Math.min(totalSize + 10, buffer.byteLength);
 
         while (offset < limit - 10) {
-            let frameId = ""; let frameSize = 0; let headerSize = 10;
+            let frameId = "";
+            let frameSize = 0;
+            let headerSize = 10;
+
             if (version === 2) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2));
                 frameSize = (view.getUint8(offset+3) << 16) | (view.getUint8(offset+4) << 8) | view.getUint8(offset+5);
@@ -211,10 +221,16 @@ function parseCompleteMP3(buffer) {
                 frameSize = (view.getUint8(offset+4) << 24) | (view.getUint8(offset+5) << 16) | (view.getUint8(offset+6) << 8) | view.getUint8(offset+7);
             } else if (version === 4) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2), view.getUint8(offset+3));
-                frameSize = ((view.getUint8(offset+4) & 0x7F) << 21) | ((view.getUint8(offset+5) & 0x7F) << 14) | ((view.getUint8(offset+6) & 0x7F) << 7) | (view.getUint8(offset+7) & 0x7F);
+                frameSize = ((view.getUint8(offset+4) & 0x7F) << 21) | 
+                            ((view.getUint8(offset+5) & 0x7F) << 14) | 
+                            ((view.getUint8(offset+6) & 0x7F) << 7)  | 
+                            (view.getUint8(offset+7) & 0x7F);
             }
 
-            if (!frameId || frameId.charCodeAt(0) === 0 || frameSize <= 0 || (offset + headerSize + frameSize) > limit) break;
+            if (!frameId || frameId.charCodeAt(0) === 0 || frameSize <= 0 || (offset + headerSize + frameSize) > limit) {
+                break;
+            }
+            
             let dataOffset = offset + headerSize;
 
             try {
@@ -227,6 +243,7 @@ function parseCompleteMP3(buffer) {
                     tags.base64Cover = readPictureFrame(view, dataOffset, frameSize, version);
                 }
             } catch(err) {}
+            
             offset += headerSize + frameSize;
         }
     }
@@ -234,15 +251,18 @@ function parseCompleteMP3(buffer) {
     try {
         let syncOffset = 0;
         const maxSearch = Math.min(buffer.byteLength - 4, 64000);
-        const sampleRatesTable =;
-        const bitratesTable =;
+        const sampleRatesTable = [44100, 48000, 32000, 0];
+        const bitratesTable = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+        
         while (syncOffset < maxSearch) {
             if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
                 const byte2 = view.getUint8(syncOffset + 2);
                 const byte3 = view.getUint8(syncOffset + 3);
+
                 const sampleRate = sampleRatesTable[(byte2 & 0x0C) >> 2];
                 const channels = ((byte3 & 0xC0) >> 6) === 3 ? "Mono" : "Stereo";
                 const bitrate = bitratesTable[(byte2 & 0xF0) >> 4];
+
                 tags.technical.frequency = sampleRate ? `${sampleRate} Hz` : "-";
                 tags.technical.channels = channels;
                 tags.technical.bitrate = bitrate ? `${bitrate} kbps` : "MPEG Audio";
@@ -258,6 +278,7 @@ function parseCompleteMP3(buffer) {
     tags.year = tags._raw["TYER"] || tags._raw["TYE"] || tags._raw["TDRC"] || "";
     tags.genre = tags._raw["TCON"] || tags._raw["TCO"] || "";
     tags.track = tags._raw["TRCK"] || tags._raw["TRK"] || "";
+
     return tags;
 }
 
@@ -280,10 +301,11 @@ function decodeString(uint8Array, encoding) {
         let cleanBytes = uint8Array.filter((b) => encoding === 0 ? b !== 0 : true);
         if (cleanBytes.length === 0) return "";
         let decoded = "";
+        
         if (encoding === 1 || encoding === 2) {
-            if (cleanBytes.length >= 2 && cleanBytes === 0xFF && cleanBytes === 0xFE) {
+            if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) {
                 decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
-            } else if (cleanBytes.length >= 2 && cleanBytes === 0xFE && cleanBytes === 0xFF) {
+            } else if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF) {
                 decoded = new TextDecoder('utf-16be').decode(cleanBytes.subarray(2));
             } else {
                 decoded = new TextDecoder('utf-16').decode(cleanBytes);
@@ -293,29 +315,43 @@ function decodeString(uint8Array, encoding) {
         } else {
             decoded = new TextDecoder('windows-1252').decode(cleanBytes);
         }
+
         const cjkRegex = /[\u4e00-\u9fa5\u3040-\u30ff]/;
         if (cjkRegex.test(decoded)) {
             const strippedBytes = cleanBytes.filter(b => b >= 32 || b === 10 || b === 13);
             decoded = new TextDecoder('windows-1252').decode(strippedBytes);
         }
+
         return decoded.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
     } catch(e) { return ""; }
 }
 
 function readPictureFrame(view, offset, size, version) {
     try {
-        const end = offset + size; let current = offset + 1; let mimeType = "image/jpeg";
-        if (version === 2) { current = offset + 5; } else {
+        const end = offset + size;
+        let current = offset + 1;
+        let mimeType = "image/jpeg";
+
+        if (version === 2) {
+            current = offset + 5;
+        } else {
             let mimeChars = [];
-            while (view.getUint8(current) !== 0 && current < end) { mimeChars.push(String.fromCharCode(view.getUint8(current))); current++; }
+            while (view.getUint8(current) !== 0 && current < end) {
+                mimeChars.push(String.fromCharCode(view.getUint8(current)));
+                current++;
+            }
             if (mimeChars.length) mimeType = mimeChars.join("");
             current += 2;
         }
+
         while (view.getUint8(current) !== 0 && current < end) current++;
         current++;
+
         if (current >= end) return "";
+        
         const imgBytes = new Uint8Array(view.buffer, view.byteOffset + current, end - current);
-        let binary = ''; const len = imgBytes.byteLength;
+        let binary = '';
+        const len = imgBytes.byteLength;
         for (let i = 0; i < len; i++) binary += String.fromCharCode(imgBytes[i]);
         return `data:${mimeType};base64,${btoa(binary)}`;
     } catch(e) { return ""; }
@@ -324,8 +360,10 @@ function readPictureFrame(view, offset, size, version) {
 function displayMainTags(tags) {
     const metaContainer = document.getElementById("meta-container");
     if (metaContainer) metaContainer.classList.remove("field-hidden");
+    
     const btnDownloadMeta = document.getElementById("btn-download-meta");
     if (btnDownloadMeta) btnDownloadMeta.classList.remove("field-hidden");
+    
     const fallback = langData[window.currentLang].unknown;
     
     if (document.getElementById("val-title")) document.getElementById("val-title").innerText = tags.title || fallback;
@@ -334,6 +372,7 @@ function displayMainTags(tags) {
     if (document.getElementById("val-year")) document.getElementById("val-year").innerText = tags.year || fallback;
     if (document.getElementById("val-genre")) document.getElementById("val-genre").innerText = tags.genre || fallback;
     if (document.getElementById("val-track")) document.getElementById("val-track").innerText = tags.track || fallback;
+
     if (document.getElementById("val-bitrate")) document.getElementById("val-bitrate").innerText = tags.technical.bitrate || "-";
     if (document.getElementById("val-frequency")) document.getElementById("val-frequency").innerText = tags.technical.frequency || "-";
     if (document.getElementById("val-channels")) document.getElementById("val-channels").innerText = tags.technical.channels || "-";
