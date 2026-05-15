@@ -2,6 +2,7 @@
    DECLARAÇÃO DE VARIÁVEIS E ESCOPO DE TEMAS
    ========================================================================== */
 :root {
+    /* Padrão Inicial (Fallback Dark) */
     --bg-main: #020617;
     --bg-card: #0b1329;
     --accent: #3b82f6;
@@ -57,6 +58,7 @@ html {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
+/* Customização Estética do Scrollbar */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -86,6 +88,7 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Cabeçalho Superior Fixo */
 header {
     display: flex;
     justify-content: space-between;
@@ -117,6 +120,7 @@ body.light-theme header {
     text-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
 }
 
+/* Caixas de Seleção de Idioma */
 .lang-selector {
     display: flex;
     background: rgba(100, 116, 139, 0.08);
@@ -149,7 +153,7 @@ body.light-theme header {
 
 .container {
     max-width: 900px;
-    margin: 2.5rem auto;
+    margin: 2.5rem auto 4rem auto;
     padding: 0 1.5rem;
     display: flex;
     flex-direction: column;
@@ -183,7 +187,7 @@ body.light-theme header {
 }
 
 .url-zone {
-    cursor: default; /* URL zone possui um input de texto digitável */
+    cursor: default; /* Contém elementos internos acionáveis por digitação */
 }
 
 .drop-zone:hover, .url-zone:focus-within {
@@ -193,6 +197,11 @@ body.light-theme header {
 
 .drop-zone svg, .url-zone svg {
     color: var(--accent);
+    transition: transform 0.2s ease;
+}
+
+.drop-zone:hover svg {
+    transform: translateY(-2px); /* Efeito sutil de flutuação no upload */
 }
 
 .drop-zone p, .url-zone p {
@@ -201,6 +210,7 @@ body.light-theme header {
     color: var(--text-muted);
 }
 
+/* Barramento Interno de Entrada de URL */
 .url-input-container {
     display: flex;
     width: 100%;
@@ -217,16 +227,17 @@ body.light-theme header {
     color: var(--text-main);
     font-size: 0.85rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .url-input-container input:focus {
     border-color: var(--accent);
+    background: rgba(100, 116, 139, 0.02);
 }
 
 .url-input-container button {
     background: var(--accent);
-    color: white;
+    color: #ffffff;
     border: none;
     padding: 0 1rem;
     border-radius: 8px;
@@ -234,11 +245,15 @@ body.light-theme header {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .url-input-container button:hover {
     background: var(--accent-hover);
+}
+
+.url-input-container button:active {
+    transform: scale(0.97);
 }
 
 /* ==========================================================================
@@ -332,6 +347,7 @@ body.light-theme header {
     transition: color 0.3s ease;
 }
 
+/* Blocos Estendidos (Letras e Dados Técnicos) */
 .extended-meta-card {
     background: var(--bg-card);
     border-radius: var(--radius);
@@ -395,41 +411,7 @@ body.light-theme header {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* ==========================================================================
-   RODAPÉ E FORMATADOS AUXILIARES
-   ========================================================================== */
-.app-footer {
-    width: 100%;
-    text-align: center;
-    padding: 2rem 1rem;
-    border-top: 1px solid var(--border);
-    background: rgba(100, 116, 139, 0.02);
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.app-footer strong {
-    color: var(--text-main);
-    font-weight: 600;
-}
-
-.footer-link {
-    margin-top: 0.35rem;
-}
-
-.footer-link a {
-    color: var(--accent);
-    text-decoration: none;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-weight: 500;
-    transition: color 0.2s ease;
-}
-
-.footer-link a:hover {
-    color: var(--accent-hover);
-}
-
+/* Modificadores Gerais */
 .field-hidden {
     display: none !important;
 }
