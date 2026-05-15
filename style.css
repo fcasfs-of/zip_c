@@ -43,7 +43,7 @@ body.light-theme {
 }
 
 /* ==========================================================================
-   RESET E CUSTOMIZAÇÃO GLOBAL DA SCROLLBAR
+   RESET, TRANSIÇÃO GLOBAL E BLOQUEIO DE SELEÇÃO DE TEXTO
    ========================================================================== */
 * {
     margin: 0;
@@ -51,6 +51,23 @@ body.light-theme {
     box-sizing: border-box;
     font-family: system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    
+    /* 1. Transição fluida aplicada globalmente a todos os objetos da página */
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* 2. Remove por padrão a capacidade de selecionar ou arrastar textos */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Exceção crítica: Permite digitação e seleção normal dentro de campos de formulário */
+input, textarea {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
 }
 
 html {
@@ -58,7 +75,7 @@ html {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* Customização Estética do Scrollbar */
+/* Customização Estética do Scrollbar (Não afetada pela transição global) */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -72,7 +89,6 @@ html {
     background: var(--scrollbar-thumb);
     border-radius: 9999px;
     border: 2px solid var(--scrollbar-track);
-    transition: background-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -85,7 +101,6 @@ body {
     min-height: 100vh;
     padding-bottom: 160px;
     overflow-x: hidden;
-    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Cabeçalho Superior Fixo */
@@ -101,7 +116,6 @@ header {
     position: sticky;
     top: 0;
     z-index: 900;
-    transition: border-color 0.3s ease;
 }
 
 body.light-theme header {
@@ -138,7 +152,6 @@ body.light-theme header {
     font-size: 0.8rem;
     font-weight: 700;
     border-radius: 6px;
-    transition: all 0.2s ease;
 }
 
 .lang-selector button:hover {
@@ -182,7 +195,6 @@ body.light-theme header {
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -197,7 +209,6 @@ body.light-theme header {
 
 .drop-zone svg, .url-zone svg {
     color: var(--accent);
-    transition: transform 0.2s ease;
 }
 
 .drop-zone:hover svg {
@@ -227,7 +238,6 @@ body.light-theme header {
     color: var(--text-main);
     font-size: 0.85rem;
     outline: none;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .url-input-container input:focus {
@@ -235,7 +245,6 @@ body.light-theme header {
     background: rgba(100, 116, 139, 0.02);
 }
 
-/* Força a cor do ícone SVG interno para BRANCO com contraste ideal */
 .url-input-container button {
     background: var(--accent);
     color: #ffffff;
@@ -246,7 +255,6 @@ body.light-theme header {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
 }
 
 .url-input-container button:hover {
@@ -258,7 +266,6 @@ body.light-theme header {
     transform: scale(0.97);
 }
 
-/* Garante o alinhamento da cor no vetor interno */
 .url-input-container button svg {
     color: inherit;
     stroke: currentColor;
@@ -282,7 +289,6 @@ body.light-theme header {
     gap: 2.5rem;
     align-items: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .cover-wrapper {
@@ -299,10 +305,15 @@ body.light-theme header {
     justify-content: center;
 }
 
-.cover-wrapper img {
+.cover-wrapper img:not(.field-hidden) {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    cursor: pointer;
+}
+
+.cover-wrapper img:not(.field-hidden):hover {
+    transform: scale(1.02);
 }
 
 .no-cover {
@@ -334,7 +345,6 @@ body.light-theme header {
     gap: 0.25rem;
     border-bottom: 1px solid var(--border);
     padding-bottom: 0.5rem;
-    transition: border-color 0.3s ease;
 }
 
 .info-item .label {
@@ -352,7 +362,6 @@ body.light-theme header {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: color 0.3s ease;
 }
 
 /* Blocos Estendidos (Letras e Dados Técnicos) */
@@ -362,7 +371,6 @@ body.light-theme header {
     padding: 2rem;
     border: 1px solid var(--border);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .extended-meta-card h3 {
@@ -388,7 +396,6 @@ body.light-theme header {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .extended-key {
@@ -404,6 +411,7 @@ body.light-theme header {
     color: var(--text-main);
 }
 
+/* Área de Letras (O usuário não poderá selecionar o texto por conta do reset global) */
 .lyrics-content {
     background: rgba(100, 116, 139, 0.03);
     padding: 1.5rem;
@@ -416,7 +424,6 @@ body.light-theme header {
     overflow-y: auto;
     color: var(--text-main);
     border: 1px solid var(--border);
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .field-hidden {
