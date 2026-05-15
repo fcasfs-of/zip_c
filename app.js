@@ -9,8 +9,7 @@ const langData = {
         playerEmptyArtist: "Aguardando arquivo",
         lyricsTitle: "Letras da Música",
         techTitle: "Propriedades Técnicas do Arquivo",
-        lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio",
-        corsError: "URL remota com restrição CORS. Áudio carregado diretamente no player."
+        lblBitrate: "Taxa de Bits", lblFrequency: "Frequência de Amostragem", lblChannels: "Canais de Áudio"
     },
     en: {
         drop: "Drag your MP3 here or click to browse",
@@ -22,8 +21,7 @@ const langData = {
         playerEmptyArtist: "Waiting for file",
         lyricsTitle: "Lyrics",
         techTitle: "Technical Properties",
-        lblBitrate: "Bitrate", lblFrequency: "Sample Rate", lblChannels: "Audio Channels",
-        corsError: "Remote URL restricted by CORS. Audio loaded directly into player."
+        lblBitrate: "Bitrate", lblFrequency: "Sample Rate", lblChannels: "Audio Channels"
     }
 };
 
@@ -32,6 +30,7 @@ window.dynamicDiscoveredTags = {};
 
 let currentTheme = localStorage.getItem("audioMeta_theme") || "dark";
 
+// DOM elements
 const txtDrop = document.getElementById("txt-drop");
 const txtMetaTitle = document.getElementById("txt-meta-title");
 const txtLyricsTitle = document.getElementById("txt-lyrics-title");
@@ -50,9 +49,9 @@ const fileInput = document.getElementById("file-input");
 const btnTheme = document.getElementById("btn-theme");
 const txtBtnDownload = document.getElementById("txt-btn-download");
 
-// Inputs de URL
-const btnUrlSubmit = document.getElementById("btn-url-submit");
+// URL inputs
 const urlInput = document.getElementById("url-input");
+const btnLoadUrl = document.getElementById("btn-load-url");
 
 function initTheme() {
     document.body.classList.remove("light-theme", "dark-theme");
@@ -109,12 +108,10 @@ function updateLanguage(lang) {
     if (lblChannels) lblChannels.innerText = langData[lang].lblChannels;
     if (txtBtnDownload) txtBtnDownload.innerText = lang === "pt" ? "Baixar Dados" : "Download Data";
 
-    const txtUrlTitle = document.getElementById("txt-url-title");
-    if (txtUrlTitle) txtUrlTitle.innerText = lang === "pt" ? "Ou insira a URL do áudio MP3" : "Or enter MP3 audio URL";
-
     if (Object.keys(window.dynamicDiscoveredTags).length > 0) {
         displayMainTags(window.dynamicDiscoveredTags);
     }
+
     if (typeof window.updatePlayerLanguage === "function") {
         window.updatePlayerLanguage(langData[lang]);
     }
@@ -123,6 +120,7 @@ function updateLanguage(lang) {
 if (document.getElementById("btn-pt")) document.getElementById("btn-pt").addEventListener("click", () => updateLanguage("pt"));
 if (document.getElementById("btn-en")) document.getElementById("btn-en").addEventListener("click", () => updateLanguage("en"));
 
+// Entrada de Arquivo Local
 if (dropZone && fileInput) {
     dropZone.addEventListener("click", () => fileInput.click());
     dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
@@ -130,73 +128,70 @@ if (dropZone && fileInput) {
     dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.style.borderColor = "var(--border)";
-        if (e.dataTransfer.files && e.dataTransfer.files.length) handleLocalFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files && e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener("change", (e) => {
-        if (e.target.files && e.target.files.length) handleLocalFile(e.target.files[0]);
+        if (e.target.files && e.target.files.length) handleFile(e.target.files[0]);
     });
 }
 
-// Disparador de input por Link URL
-if (btnUrlSubmit && urlInput) {
-    btnUrlSubmit.addEventListener("click", () => {
-        const urlValue = urlInput.value.trim();
-        if (urlValue) handleUrlFile(urlValue);
-    });
-    urlInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            const urlValue = urlInput.value.trim();
-            if (urlValue) handleUrlFile(urlValue);
-        }
-    });
-}
-
-function handleLocalFile(file) {
+function handleFile(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
-        window.dynamicDiscoveredTags = parseCompleteMP3(e.target.result);
+        const buffer = e.target.result;
+        window.dynamicDiscoveredTags = parseCompleteMP3(buffer);
         displayMainTags(window.dynamicDiscoveredTags);
+        
+        const fallbackUnknown = langData[window.currentLang].unknown;
         if (typeof window.initPlayer === "function") {
-            window.initPlayer(URL.createObjectURL(file), file.name, window.dynamicDiscoveredTags, langData[window.currentLang].unknown);
+            window.initPlayer(file, window.dynamicDiscoveredTags, fallbackUnknown, false);
         }
     };
     reader.readAsArrayBuffer(file);
 }
 
-function handleUrlFile(url) {
-    const filename = url.substring(url.lastIndexOf('/') + 1) || "Remoto.mp3";
-    
-    // Tenta ler binários via Fetch (pode falhar silenciosamente se o servidor de terceiros travar o CORS)
+// Entrada de Link Web (URL)
+if (btnLoadUrl && urlInput) {
+    btnLoadUrl.addEventListener("click", () => {
+        const url = urlInput.value.trim();
+        if (!url) return;
+        handleUrl(url);
+    });
+    urlInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            const url = urlInput.value.trim();
+            if (!url) return;
+            handleUrl(url);
+        }
+    });
+}
+
+function handleUrl(url) {
+    // Requisição via Fetch para obter o buffer binário do áudio via web
     fetch(url)
         .then(response => {
-            if (!response.ok) throw new Error("Network error");
+            if (!response.ok) throw new Error("Erro de rede");
             return response.arrayBuffer();
         })
         .then(buffer => {
             window.dynamicDiscoveredTags = parseCompleteMP3(buffer);
             displayMainTags(window.dynamicDiscoveredTags);
+            
+            const fallbackUnknown = langData[window.currentLang].unknown;
             if (typeof window.initPlayer === "function") {
-                window.initPlayer(url, filename, window.dynamicDiscoveredTags, langData[window.currentLang].unknown);
+                window.initPlayer(url, window.dynamicDiscoveredTags, fallbackUnknown, true);
             }
         })
-        .catch(() => {
-            // Fallback CORS: Limpa erros críticos do console e alimenta o player diretamente com o stream
-            window.dynamicDiscoveredTags = {
-                title: filename, artist: langData[window.currentLang].corsError,
-                album: "", year: "", genre: "", track: "",
-                lyrics: "", technical: { bitrate: "Streaming", frequency: "-", channels: "-" }, base64Cover: ""
-            };
-            displayMainTags(window.dynamicDiscoveredTags);
-            if (typeof window.initPlayer === "function") {
-                window.initPlayer(url, filename, window.dynamicDiscoveredTags, langData[window.currentLang].unknown);
-            }
+        .catch(err => {
+            console.error("Falha ao carregar áudio via URL. Certifique-se de que o link aceita requisições CORS.", err);
         });
 }
 
 function parseCompleteMP3(buffer) {
     const view = new DataView(buffer);
     const tags = { _raw: {}, lyrics: "", technical: { bitrate: "-", frequency: "-", channels: "-" }, base64Cover: "" };
+    
     if (buffer.byteLength < 10) return tags;
 
     if (view.getUint8(0) === 0x49 && view.getUint8(1) === 0x44 && view.getUint8(2) === 0x33) {
@@ -206,7 +201,7 @@ function parseCompleteMP3(buffer) {
         const limit = Math.min(totalSize + 10, buffer.byteLength);
 
         while (offset < limit - 10) {
-            let frameId = "", frameSize = 0, headerSize = 10;
+            let frameId = ""; let frameSize = 0; let headerSize = 10;
             if (version === 2) {
                 frameId = String.fromCharCode(view.getUint8(offset), view.getUint8(offset+1), view.getUint8(offset+2));
                 frameSize = (view.getUint8(offset+3) << 16) | (view.getUint8(offset+4) << 8) | view.getUint8(offset+5);
@@ -231,7 +226,7 @@ function parseCompleteMP3(buffer) {
                 } else if (frameId === "APIC" || frameId === "PIC") {
                     tags.base64Cover = readPictureFrame(view, dataOffset, frameSize, version);
                 }
-            } catch(e) {}
+            } catch(err) {}
             offset += headerSize + frameSize;
         }
     }
@@ -239,8 +234,8 @@ function parseCompleteMP3(buffer) {
     try {
         let syncOffset = 0;
         const maxSearch = Math.min(buffer.byteLength - 4, 64000);
-        const sampleRatesTable = [44100, 48000, 32000, 0];
-        const bitratesTable = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+        const sampleRatesTable =;
+        const bitratesTable =;
         while (syncOffset < maxSearch) {
             if (view.getUint8(syncOffset) === 0xFF && (view.getUint8(syncOffset + 1) & 0xE0) === 0xE0) {
                 const byte2 = view.getUint8(syncOffset + 2);
@@ -268,12 +263,16 @@ function parseCompleteMP3(buffer) {
 
 function readTextFrame(view, offset, size) {
     if (size <= 1) return "";
-    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1), view.getUint8(offset));
+    const encoding = view.getUint8(offset);
+    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 1, size - 1);
+    return decodeString(u8, encoding);
 }
 
 function readLyricsFrame(view, offset, size) {
     if (size <= 5) return "";
-    return decodeString(new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5), view.getUint8(offset));
+    const encoding = view.getUint8(offset);
+    const u8 = new Uint8Array(view.buffer, view.byteOffset + offset + 5, size - 5);
+    return decodeString(u8, encoding);
 }
 
 function decodeString(uint8Array, encoding) {
@@ -282,13 +281,22 @@ function decodeString(uint8Array, encoding) {
         if (cleanBytes.length === 0) return "";
         let decoded = "";
         if (encoding === 1 || encoding === 2) {
-            if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFF && cleanBytes[1] === 0xFE) decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
-            else if (cleanBytes.length >= 2 && cleanBytes[0] === 0xFE && cleanBytes[1] === 0xFF) decoded = new TextDecoder('utf-16be').decode(cleanBytes.subarray(2));
-            else decoded = new TextDecoder('utf-16').decode(cleanBytes);
-        } else if (encoding === 3) decoded = new TextDecoder('utf-8').decode(cleanBytes);
-        else decoded = new TextDecoder('windows-1252').decode(cleanBytes);
-        if (/[\u4e00-\u9fa5\u3040-\u30ff]/.test(decoded)) {
-            decoded = new TextDecoder('windows-1252').decode(cleanBytes.filter(b => b >= 32 || b === 10 || b === 13));
+            if (cleanBytes.length >= 2 && cleanBytes === 0xFF && cleanBytes === 0xFE) {
+                decoded = new TextDecoder('utf-16le').decode(cleanBytes.subarray(2));
+            } else if (cleanBytes.length >= 2 && cleanBytes === 0xFE && cleanBytes === 0xFF) {
+                decoded = new TextDecoder('utf-16be').decode(cleanBytes.subarray(2));
+            } else {
+                decoded = new TextDecoder('utf-16').decode(cleanBytes);
+            }
+        } else if (encoding === 3) {
+            decoded = new TextDecoder('utf-8').decode(cleanBytes);
+        } else {
+            decoded = new TextDecoder('windows-1252').decode(cleanBytes);
+        }
+        const cjkRegex = /[\u4e00-\u9fa5\u3040-\u30ff]/;
+        if (cjkRegex.test(decoded)) {
+            const strippedBytes = cleanBytes.filter(b => b >= 32 || b === 10 || b === 13);
+            decoded = new TextDecoder('windows-1252').decode(strippedBytes);
         }
         return decoded.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
     } catch(e) { return ""; }
@@ -296,10 +304,8 @@ function decodeString(uint8Array, encoding) {
 
 function readPictureFrame(view, offset, size, version) {
     try {
-        const end = offset + size;
-        let current = offset + 1, mimeType = "image/jpeg";
-        if (version === 2) current = offset + 5;
-        else {
+        const end = offset + size; let current = offset + 1; let mimeType = "image/jpeg";
+        if (version === 2) { current = offset + 5; } else {
             let mimeChars = [];
             while (view.getUint8(current) !== 0 && current < end) { mimeChars.push(String.fromCharCode(view.getUint8(current))); current++; }
             if (mimeChars.length) mimeType = mimeChars.join("");
@@ -309,8 +315,8 @@ function readPictureFrame(view, offset, size, version) {
         current++;
         if (current >= end) return "";
         const imgBytes = new Uint8Array(view.buffer, view.byteOffset + current, end - current);
-        let binary = '';
-        for (let i = 0; i < imgBytes.byteLength; i++) binary += String.fromCharCode(imgBytes[i]);
+        let binary = ''; const len = imgBytes.byteLength;
+        for (let i = 0; i < len; i++) binary += String.fromCharCode(imgBytes[i]);
         return `data:${mimeType};base64,${btoa(binary)}`;
     } catch(e) { return ""; }
 }
@@ -320,8 +326,8 @@ function displayMainTags(tags) {
     if (metaContainer) metaContainer.classList.remove("field-hidden");
     const btnDownloadMeta = document.getElementById("btn-download-meta");
     if (btnDownloadMeta) btnDownloadMeta.classList.remove("field-hidden");
-    
     const fallback = langData[window.currentLang].unknown;
+    
     if (document.getElementById("val-title")) document.getElementById("val-title").innerText = tags.title || fallback;
     if (document.getElementById("val-artist")) document.getElementById("val-artist").innerText = tags.artist || fallback;
     if (document.getElementById("val-album")) document.getElementById("val-album").innerText = tags.album || fallback;
@@ -332,14 +338,28 @@ function displayMainTags(tags) {
     if (document.getElementById("val-frequency")) document.getElementById("val-frequency").innerText = tags.technical.frequency || "-";
     if (document.getElementById("val-channels")) document.getElementById("val-channels").innerText = tags.technical.channels || "-";
 
-    const lyricsCard = document.getElementById("lyrics-card"), lyricsText = document.getElementById("lyrics-text");
-    if (tags.lyrics && lyricsCard && lyricsText) { lyricsCard.classList.remove("field-hidden"); lyricsText.innerText = tags.lyrics; }
-    else if (lyricsCard) lyricsCard.classList.add("field-hidden");
+    const lyricsCard = document.getElementById("lyrics-card");
+    const lyricsText = document.getElementById("lyrics-text");
+    if (tags.lyrics && lyricsCard && lyricsText) {
+        lyricsCard.classList.remove("field-hidden");
+        lyricsText.innerText = tags.lyrics;
+    } else if (lyricsCard) {
+        lyricsCard.classList.add("field-hidden");
+    }
 
-    const img = document.getElementById("cover-art"), def = document.getElementById("default-cover");
+    const img = document.getElementById("cover-art");
+    const def = document.getElementById("default-cover");
     if (img && def) {
-        if (tags.base64Cover && tags.base64Cover.length > 50) { img.src = tags.base64Cover; img.classList.remove("field-hidden"); def.classList.add("field-hidden"); }
-        else { img.src = ""; img.classList.add("field-hidden"); def.innerHTML = `<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>`; def.classList.remove("field-hidden"); }
+        if (tags.base64Cover && tags.base64Cover.length > 50) {
+            img.src = tags.base64Cover;
+            img.classList.remove("field-hidden");
+            def.classList.add("field-hidden");
+        } else {
+            img.src = "";
+            img.classList.add("field-hidden");
+            def.innerHTML = `<svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>`;
+            def.classList.remove("field-hidden");
+        }
     }
 }
 
