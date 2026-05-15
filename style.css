@@ -187,7 +187,7 @@ body.light-theme header {
 }
 
 .url-zone {
-    cursor: default; /* Contém elementos internos acionáveis por digitação */
+    cursor: default;
 }
 
 .drop-zone:hover, .url-zone:focus-within {
@@ -201,7 +201,7 @@ body.light-theme header {
 }
 
 .drop-zone:hover svg {
-    transform: translateY(-2px); /* Efeito sutil de flutuação no upload */
+    transform: translateY(-2px);
 }
 
 .drop-zone p, .url-zone p {
@@ -235,6 +235,7 @@ body.light-theme header {
     background: rgba(100, 116, 139, 0.02);
 }
 
+/* Força a cor do ícone SVG interno para BRANCO com contraste ideal */
 .url-input-container button {
     background: var(--accent);
     color: #ffffff;
@@ -245,15 +246,22 @@ body.light-theme header {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
 }
 
 .url-input-container button:hover {
     background: var(--accent-hover);
+    color: #f8fafc;
 }
 
 .url-input-container button:active {
     transform: scale(0.97);
+}
+
+/* Garante o alinhamento da cor no vetor interno */
+.url-input-container button svg {
+    color: inherit;
+    stroke: currentColor;
 }
 
 /* ==========================================================================
@@ -411,7 +419,6 @@ body.light-theme header {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* Modificadores Gerais */
 .field-hidden {
     display: none !important;
 }
