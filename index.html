@@ -3,114 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AudioMeta Pro</title>
-    
-    <!-- Favicon Original Incorporado via Data URI Base64 (Vetor de Ondas Sonoras Pro) -->
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAiklEQVRIS2NkoDFgpLH5DKMWEAxhkoLIqvHbQUZGhn9H67gcCZoMVUCSBdZN3/6D9AEtIFof0QpBBlPdAqCB+6EuBgcJugXEBBleH6AbSIiPLV6GuQVWTd8OMDL8/320jtsVWxwQE+kUpaKhZwF6kKHzSU5FxBYH+NSRFAfkWDhqAcFQGw0igkEEAMOuaBmme52wAAAAEGRlQkdDMjFCNjA4QUZDNjZDMjNEXVxghQAAAABJRU5ErkJggg==">
-
+    <title>ZipCompressor</title>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAYAAAA7bUf6AAAA8ElEQVR4AYySMQ5BQRRFUaAQu9HQaBQ6IkFpCWrrsACJQqEiRBTCIuxEpeLciRnf9ybz5Z6ZeX/eO/lBpfT9vDjGeHDXAjNZiRrKLB6OJX9uUByhA3/JS3yD3kgCX2sfsxygDT+JSSSQKNt8oxiC3qjLHhKTSCBRaPwcvGhHHUQxiQQS0RuiWlx50oQTuMQkapbINbHonKfOc5eYRAMSuabUEpNIIFFq3t1bkho3U9BPWmVPxpJsmRrACNaQjCXpMTWDOfQhGUtyZmoFF1hCMpZkwtQe9J0s2JOxJE+mNnCHQrEkhQazTXmJ/h9FCZ43AAAA///x/U7KAAAABklEQVQDAL8ULxYOlLMyAAAAAElFTkSuQmCC">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="player.css">
-    <link rel="stylesheet" href="lightbox.css">
+ <style>
+</style>
 </head>
 <body>
 
     <header>
-        <!-- Título do Header acoplado com Ícone SVG Geométrico Moderno -->
-        <div class="logo" style="display: flex; align-items: center; gap: 0.65rem;">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));">
-                <path d="M12 2v20M17 5v14M22 9v6M7 7v10M2 10v4"/>
-            </svg>
-            <span>AudioMeta <span>Pro</span></span>
+        <div class="logo">
+            <svg width="28px" height="28px" viewBox="0 0 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="none" xmlns:xlink="http://www.w3.org/1999/xlink">	<path d="M9.667 0h-7.667v17h13v-11.692l-5.333-5.308zM10 1.742l3.273 3.258h-3.273v-3.258zM3 16v-15h3v1h1v-1h2v5h5v10h-11zM5 8h1v1h-1v-1zM6 8v-1h1v1h-1zM6 6v-1h1v1h-1zM5 6h1v1h-1v-1zM5 4h1v1h-1v-1zM6 4v-1h1v1h-1zM5 2h1v1h-1v-1zM6 9.389c-1.103 0-2 0.897-2 2s0.897 2 2 2c0.062 0 0.121-0.007 0.219-0.020 0.646-0.071 1.218-0.455 1.531-1.026 0.166-0.303 0.25-0.624 0.25-0.954 0-1.103-0.897-2-2-2zM6.873 11.864c-0.156 0.285-0.441 0.477-0.762 0.512l-0.112 0.014c-0.551 0-0.999-0.449-0.999-1s0.449-1 1-1 1 0.449 1 1c0 0.159-0.043 0.319-0.127 0.474z" fill="currentcolor"/></svg>
+            <span>ZipCompressor</span>
         </div>
-
-        <div class="controls-wrapper" style="display: flex; align-items: center; gap: 1rem;">
-            <!-- Botão Alternador de Temas Claro/Escuro -->
-            <button id="btn-theme" class="theme-toggle-btn" title="Alternar Tema" style="background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; transition: all 0.2s;">
-                <svg id="svg-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                <svg id="svg-moon" class="field-hidden" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-            </button>
-
-            <!-- Alternador de Idiomas -->
-            <div class="lang-selector">
-                <button id="btn-pt" class="active">PT</button>
-                <button id="btn-en">EN</button>
-            </div>
-        </div>
+   <button class="lang-btn" id="lang-toggle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            <span id="lang-text">EN</span>
+        </button>
     </header>
 
-    <main class="container">
-        <!-- Bloco de Grade Inteligente com Duplo Input de Mídia -->
-        <div class="input-grid-wrapper">
-            <!-- Entrada 1: Upload de Arquivo MP3 Local -->
-            <section class="drop-zone" id="drop-zone">
-                <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <p id="txt-drop">Arraste seu MP3 aqui ou clique para buscar</p>
-                <input type="file" id="file-input" accept="audio/mp3, audio/mpeg" hidden>
-            </section>
-
-            <!-- Entrada 2: Carregamento de Stream via Link/URL Web -->
-            <section class="url-zone">
-                <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                <p id="txt-url-label">Ou insira o link web do áudio MP3</p>
-                <div class="url-input-container">
-                    <input type="url" id="url-input" placeholder="https://cloud-fs.net">
-                    <button id="btn-load-url" title="Carregar URL">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    </button>
-                </div>
-            </section>
+    <main>
+        <div class="dropzone" id="dropzone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <p id="txt-drop">Arraste arquivos ou clique para upload</p>
+            <span id="txt-sub">Suporta múltiplos arquivos simultâneos</span>
+            <input type="file" id="file-input" multiple>
         </div>
 
-        <!-- Painel de Exibição dos Metadados Extraídos -->
-        <section class="meta-container field-hidden" id="meta-container">
-            <div class="meta-card">
-                <div class="cover-wrapper">
-                    <div class="no-cover" id="default-cover">
-                        <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>
-                    </div>
-                    <img id="cover-art" alt="Cover Art" class="field-hidden">
-                </div>
-                <div class="meta-info">
-                    <h2 id="txt-meta-title">Metadados Extraídos</h2>
-                    <div class="info-grid">
-                        <div class="info-item"><span class="label" id="lbl-title">Título</span><span class="val" id="val-title">-</span></div>
-                        <div class="info-item"><span class="label" id="lbl-artist">Artista</span><span class="val" id="val-artist">-</span></div>
-                        <div class="info-item"><span class="label" id="lbl-album">Álbum</span><span class="val" id="val-album">-</span></div>
-                        <div class="info-item"><span class="label" id="lbl-year">Ano</span><span class="val" id="val-year">-</span></div>
-                        <div class="info-item"><span class="label" id="lbl-genre">Gênero</span><span class="val" id="val-genre">-</span></div>
-                        <div class="info-item"><span class="label" id="lbl-track">Faixa</span><span class="val" id="val-track">-</span></div>
-                    </div>
-                    
-                    <!-- Botão de Exportação e Download de Dados -->
-                    <button id="btn-download-meta" class="field-hidden" style="margin-top: 1.5rem; background: transparent; border: 1px solid var(--accent); color: var(--text-main); padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        <span id="txt-btn-download">Baixar Dados</span>
-                    </button>
-                </div>
-            </div>
+        <div class="file-list" id="file-list"></div>
 
-            <!-- Painel de Exibição das Letras Extraídas -->
-            <div class="extended-meta-card field-hidden" id="lyrics-card">
-                <h3 id="txt-lyrics-title">Letras da Música</h3>
-                <div class="lyrics-content" id="lyrics-text"></div>
-            </div>
-
-            <!-- Painel de Dados Técnicos Físicos do Áudio -->
-            <div class="extended-meta-card" id="tech-card">
-                <h3 id="txt-tech-title">Propriedades Técnicas do Arquivo</h3>
-                <div class="extended-list" id="tech-list">
-                    <div class="extended-item"><span class="extended-key" id="lbl-bitrate">Taxa de Bits</span><span class="extended-val" id="val-bitrate">-</span></div>
-                    <div class="extended-item"><span class="extended-key" id="lbl-frequency">Frequência</span><span class="extended-val" id="val-frequency">-</span></div>
-                    <div class="extended-item"><span class="extended-key" id="lbl-channels">Canais</span><span class="extended-val" id="val-channels">-</span></div>
+        <div class="preview-bar" id="preview-bar" style="display: none;">
+           <div class="compression-settings">
+    <div class="radio-tabs">
+        <label class="tab-item">
+            <input type="radio" name="comp-level" value="0">
+            <span id="lbl-c0">Sem compressão</span>
+        </label>
+        <label class="tab-item">
+            <input type="radio" name="comp-level" value="6" checked>
+            <span id="lbl-c6">Média</span>
+        </label>
+        <label class="tab-item">
+            <input type="radio" name="comp-level" value="9">
+            <span id="lbl-c9">Máxima</span>
+        </label>
+    </div>
+</div>
+            <div class="total-info">
+                <span id="txt-total">Tamanho Final (ZIP):</span>
+                <div>
+                    <span id="total-size">0 KB</span>
+                    <div class="saved-space" id="saved-space"></div>
                 </div>
             </div>
-        </section>
+            <button class="btn-compress" id="btn-compress">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span id="txt-btn">Baixar Arquivo .ZIP</span>
+            </button>
+        </div>
     </main>
 
-    <!-- Scripts Modulares Separados Conforme Arquitetura -->
     <script src="app.js"></script>
-    <script src="player.js"></script>
-    <script src="downloader.js"></script>
-    <script src="lightbox.js"></script>
 </body>
 </html>
